@@ -1,0 +1,87 @@
+GenerateObitChecksumRequest:
+  description: Generate Obit checksum payload
+  type: object
+  required:
+    - serial_number
+    - manufacturer
+    - part_number
+  properties:
+    manufacturer:
+      description: Manufacturer (Required)
+      type: string
+      example: "Apple"
+    part_number:
+      description: Part Number (Required)
+      type: string
+      example: "PN123456789"
+    serial_number:
+      description: Serial Number (Required)
+      type: string
+      example: "SN123456789"
+    metadata_uri:
+      description: Metadata URI
+      type: string
+      example: "http://somedomain.com/metadata"
+    metadata_uri_hash:
+      description: Metadata URI Hash
+      type: string
+      example: "eac615cf446cad706b2364f974cbd3ec90620c52575aa1902418572f5a8d1fb5"
+    trust_anchor_token:
+      description: Trust Token
+      type: string
+      example: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2NDc5NDEzNzksImlzcyI6ImFzY2lkaSIsInN1YiI6ImNkZDU1ZDIyLTI3NzAtNDk4Ny05YTI3LTNlNDg1ZDIzMjg1NCIsInZlcmlmeVVybCI6Imh0dHBzOi8vd3d3LmFzY2RpLmNvbS9hcGkvdjEvdmVyaWZ5In0.yEHMUUuJKFZYe04afAsPWEoX35ATb6JQj9aspY_yiY2W3HZKoKHq6rcUV02OL3hptZmByeC02yL-mkczbLLlCQ"
+
+GenerateObitChecksumResponse:
+  description: Obit checksum with logged data
+  type: object
+  properties:
+    checksum:
+      description: Obit checksum
+      type: string
+      example: ""
+    compute_log:
+      description: Log that contain captures from SDK
+      type: string
+      example: ""
+
+GenerateObitDIDRequest:
+  description: Generate Obit DID payload
+  type: object
+  required:
+    - serial_number
+    - manufacturer
+    - part_number
+  properties:
+    manufacturer:
+      description: Manufacturer (Required)
+      type: string
+      example: "Apple"
+    part_number:
+      description: Part Number (Required)
+      type: string
+      example: "PN123456789"
+    serial_number:
+      description: Serial Number (Required)
+      type: string
+      example: "SN123456789"
+
+GenerateObitDIDResponse:
+  description: Returns steps that used for DID generation
+  type: object
+  properties:
+    serial_number_hash:
+      description: Serial Number Hash is sha256 of the Serial Number input
+      type: string
+      example: ""
+    usn:
+      description: Universal Serial Number
+      type: string
+      example: ""
+    did:
+      description: DID
+      type: string
+      example: ""
+    usn_base58:
+      description: Base58
+      type: string
+      example: ""

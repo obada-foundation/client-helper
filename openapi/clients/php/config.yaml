@@ -1,0 +1,6 @@
+gitUserId: obada-foundation
+gitRepoId: client-api-library-php
+variableNamingConvention: camelCase
+invokerPackage: Obada
+modelPackage: ClientHelper
+enablePostProcessFile: true
