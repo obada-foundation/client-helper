@@ -1,0 +1,151 @@
+package account
+
+import (
+	"bytes"
+	"encoding/gob"
+	"fmt"
+
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/obada-foundation/client-helper/system/db"
+	"github.com/obada-foundation/client-helper/system/encoder"
+	"github.com/obada-foundation/client-helper/system/validate"
+)
+
+func init() {
+	config := types.GetConfig()
+	config.SetBech32PrefixForAccount("obada", "")
+}
+
+type Service struct {
+	validator *validate.Validator
+	db        db.DB
+}
+
+func NewService(v *validate.Validator, db db.DB) *Service {
+	return &Service{
+		validator: v,
+		db:        db,
+	}
+}
+
+func accountKey(ID string) []byte {
+	return []byte(fmt.Sprintf("accounts:%s", ID))
+}
+
+func walletKey(ID string) []byte {
+	return []byte(fmt.Sprintf("accounts:%s:wallet", ID))
+}
+
+func (as *Service) createAccount(accountKey []byte, na NewAccount, batch db.Batch) (Account, error) {
+	account := Account{
+		ID:    na.ID,
+		Email: na.Email,
+	}
+
+	accountBytes, err := encoder.DataEncode(account)
+	if err != nil {
+		return account, err
+	}
+
+	if err := batch.Set(accountKey, accountBytes); err != nil {
+		return account, err
+	}
+
+	return account, nil
+}
+
+func (as *Service) createWallet(walletKey []byte, batch db.Batch) (Wallet, error) {
+	privKey := secp256k1.GenPrivKey()
+	publicKey := privKey.PubKey()
+
+	wallet := Wallet{
+		PrivateKey: *privKey,
+		Address:    types.AccAddress(publicKey.Address().Bytes()).String(),
+	}
+
+	walletBytes, err := encoder.DataEncode(wallet)
+	if err != nil {
+		return wallet, err
+	}
+
+	if err := batch.Set(walletKey, walletBytes); err != nil {
+		return wallet, err
+	}
+
+	return wallet, nil
+}
+
+// Create creates a new account based on given email, returns an access token for helper API
+func (as *Service) Create(na NewAccount) (Account, error) {
+	var acc Account
+
+	if err := as.validator.Check(na); err != nil {
+		return acc, err
+	}
+
+	accKey := accountKey(na.ID)
+
+	hasAcc, err := as.db.Has(accKey)
+	if err != nil {
+		return acc, err
+	}
+
+	if hasAcc {
+		return acc, ErrAccountExists
+	}
+
+	batch := as.db.NewBatch()
+	defer batch.Close()
+
+	account, err := as.createAccount(accKey, na, batch)
+	if err != nil {
+		return acc, err
+	}
+
+	if _, err := as.createWallet(walletKey(na.ID), batch); err != nil {
+		return acc, err
+	}
+
+	if err := batch.Write(); err != nil {
+		return acc, err
+	}
+
+	return account, nil
+}
+
+func (as *Service) Wallet(ID string) (Wallet, error) {
+	var wallet Wallet
+
+	walletBytes, err := as.db.Get(walletKey(ID))
+	if err != nil {
+		return wallet, err
+	}
+
+	b := bytes.NewBuffer(walletBytes)
+	dec := gob.NewDecoder(b)
+
+	if err = dec.Decode(&wallet); err != nil {
+		return wallet, err
+	}
+
+	return wallet, nil
+}
+
+func (as *Service) Find(ID string) (Account, error) {
+	var account Account
+
+	accountBytes, err := as.db.Get(accountKey(ID))
+	if err != nil {
+		return account, err
+	}
+
+	b := bytes.NewBuffer(accountBytes)
+	dec := gob.NewDecoder(b)
+
+	if err = dec.Decode(&account); err != nil {
+		return account, err
+	}
+
+	return account, nil
+}
