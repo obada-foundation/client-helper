@@ -1,4 +1,4 @@
-package client
+package obadanode
 
 import (
 	"context"
@@ -15,6 +15,7 @@ import (
 	xauthsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	txtypes "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/obada-foundation/client-helper/services"
 	obadatypes "github.com/obada-foundation/fullcore/x/obit/types"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
@@ -22,20 +23,21 @@ import (
 	"google.golang.org/grpc"
 )
 
-type ObadaChainClient struct {
+type NodeClient struct {
 	conn *grpc.ClientConn
 
 	clientHTTP *rpchttp.HTTP
 	authClient authtypes.QueryClient
+	bankClient banktypes.QueryClient
 
 	cdc      *codec.ProtoCodec
 	txConfig client.TxConfig
 	chainID  string
 }
 
-func NewClient(chainID, rpcURI, grpcURI string) (ObadaChainClient, error) {
+func NewClient(chainID, rpcURI, grpcURI string) (NodeClient, error) {
 	var (
-		c = ObadaChainClient{
+		c = NodeClient{
 			chainID: chainID,
 		}
 		encCfg = simapp.MakeTestEncodingConfig()
@@ -51,6 +53,7 @@ func NewClient(chainID, rpcURI, grpcURI string) (ObadaChainClient, error) {
 	}
 
 	c.authClient = authtypes.NewQueryClient(c.conn)
+	c.bankClient = banktypes.NewQueryClient(c.conn)
 
 	c.cdc = codec.NewProtoCodec(encCfg.InterfaceRegistry)
 	c.txConfig = txtypes.NewTxConfig(c.cdc, txtypes.DefaultSignModes)
@@ -58,11 +61,11 @@ func NewClient(chainID, rpcURI, grpcURI string) (ObadaChainClient, error) {
 	return c, nil
 }
 
-func (c ObadaChainClient) Close() {
+func (c NodeClient) Close() {
 	c.conn.Close()
 }
 
-func (c *ObadaChainClient) BuildTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey, accSeq uint64) (authsigning.Tx, error) {
+func (c *NodeClient) BuildTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey, accSeq uint64) (authsigning.Tx, error) {
 	txBuilder := c.txConfig.NewTxBuilder()
 
 	err := txBuilder.SetMsgs(msg)
@@ -109,7 +112,7 @@ func (c *ObadaChainClient) BuildTx(ctx context.Context, msg sdk.Msg, priv crypto
 	return txBuilder.GetTx(), nil
 }
 
-func (c ObadaChainClient) Account(ctx context.Context, address string) (acc authtypes.AccountI, err error) {
+func (c NodeClient) Account(ctx context.Context, address string) (acc authtypes.AccountI, err error) {
 	req := &authtypes.QueryAccountRequest{Address: address}
 
 	res, err := c.authClient.Account(ctx, req)
@@ -126,7 +129,7 @@ func (c ObadaChainClient) Account(ctx context.Context, address string) (acc auth
 	return
 }
 
-func (c *ObadaChainClient) SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey, seq uint64) (*ctypes.ResultBroadcastTx, error) {
+func (c *NodeClient) SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey, seq uint64) (*ctypes.ResultBroadcastTx, error) {
 	tx, err := c.BuildTx(ctx, msg, priv, seq)
 	if err != nil {
 		return nil, err
@@ -150,7 +153,7 @@ func (c *ObadaChainClient) SendTx(ctx context.Context, msg sdk.Msg, priv cryptot
 	return res, nil
 }
 
-func (c ObadaChainClient) Nonce(ctx context.Context, address string) (uint64, error) {
+func (c NodeClient) Nonce(ctx context.Context, address string) (uint64, error) {
 	acc, err := c.Account(ctx, address)
 	if err != nil {
 		return 0, err
@@ -159,7 +162,7 @@ func (c ObadaChainClient) Nonce(ctx context.Context, address string) (uint64, er
 	return acc.GetSequence(), nil
 }
 
-func (c *ObadaChainClient) Mint(ctx context.Context, priv cryptotypes.PrivKey, localNFT services.LocalNFT) (*ctypes.ResultBroadcastTx, error) {
+func (c *NodeClient) Mint(ctx context.Context, priv cryptotypes.PrivKey, localNFT services.LocalNFT) (*ctypes.ResultBroadcastTx, error) {
 	accAddress := sdk.AccAddress(priv.PubKey().Address().Bytes()).String()
 	nonce, err := c.Nonce(ctx, accAddress)
 

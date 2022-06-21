@@ -15,18 +15,25 @@ type accounts struct {
 	logger     *zap.SugaredLogger
 }
 
-func (ra *accounts) createAccount(w http.ResponseWriter, r *http.Request) {
+func (ra *accounts) create(w http.ResponseWriter, r *http.Request) {
 	var newAccount account.NewAccount
-	var account account.Account
 
-	if err := render.DecodeJSON(http.MaxBytesReader(w, r.Body, hardBodyLimit), &newAccount); err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't decode request data", rest.ErrDecode)
+	claims, err := auth.GetClaims(r.Context())
+	if err != nil {
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, ra.logger)
 		return
 	}
 
+	if err := render.DecodeJSON(http.MaxBytesReader(w, r.Body, hardBodyLimit), &newAccount); err != nil {
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't decode request data", rest.ErrDecode, ra.logger)
+		return
+	}
+
+	newAccount.ID = claims.UserID
+
 	account, err := ra.accountSvc.Create(newAccount)
 	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, ra.logger)
 		return
 	}
 
@@ -34,21 +41,24 @@ func (ra *accounts) createAccount(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, &account)
 }
 
-func (ra *accounts) myAccount(w http.ResponseWriter, r *http.Request) {
-	var account account.Account
-
+func (ra *accounts) balance(w http.ResponseWriter, r *http.Request) {
 	claims, err := auth.GetClaims(r.Context())
 	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, nil, "", rest.ErrDecode)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, ra.logger)
 		return
 	}
 
-	account, err = ra.accountSvc.Find(claims.Id)
+	balance, err := ra.accountSvc.Balance(claims.UserID)
 	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode)
+		switch err {
+		case account.ErrAccountNotExists:
+			rest.SendErrorJSON(w, r, http.StatusNotFound, err, "", rest.ErrDecode, ra.logger)
+		default:
+			rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, ra.logger)
+		}
 		return
 	}
 
-	render.Status(r, http.StatusCreated)
-	render.JSON(w, r, &account)
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, &balance)
 }

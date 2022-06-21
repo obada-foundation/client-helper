@@ -2,6 +2,7 @@ package account
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"fmt"
 
@@ -9,23 +10,21 @@ import (
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/obada-foundation/client-helper/system/db"
 	"github.com/obada-foundation/client-helper/system/encoder"
+	"github.com/obada-foundation/client-helper/system/obadanode"
 	"github.com/obada-foundation/client-helper/system/validate"
 )
 
-func init() {
-	config := types.GetConfig()
-	config.SetBech32PrefixForAccount("obada", "")
-}
-
 type Service struct {
-	validator *validate.Validator
-	db        db.DB
+	validator  *validate.Validator
+	db         db.DB
+	nodeClient obadanode.NodeClient
 }
 
-func NewService(v *validate.Validator, db db.DB) *Service {
+func NewService(v *validate.Validator, db db.DB, client obadanode.NodeClient) *Service {
 	return &Service{
-		validator: v,
-		db:        db,
+		validator:  v,
+		db:         db,
+		nodeClient: client,
 	}
 }
 
@@ -57,11 +56,9 @@ func (as *Service) createAccount(accountKey []byte, na NewAccount, batch db.Batc
 
 func (as *Service) createWallet(walletKey []byte, batch db.Batch) (Wallet, error) {
 	privKey := secp256k1.GenPrivKey()
-	publicKey := privKey.PubKey()
 
 	wallet := Wallet{
 		PrivateKey: *privKey,
-		Address:    types.AccAddress(publicKey.Address().Bytes()).String(),
 	}
 
 	walletBytes, err := encoder.DataEncode(wallet)
@@ -114,10 +111,49 @@ func (as *Service) Create(na NewAccount) (Account, error) {
 	return account, nil
 }
 
+func (as *Service) Balance(ID string) (Balance, error) {
+	var balance Balance
+
+	wallet, err := as.Wallet(ID)
+	if err != nil {
+		return balance, err
+	}
+
+	pubKey := wallet.PrivateKey.PubKey()
+
+	ctx := context.Background()
+
+	nodeBalance, err := as.nodeClient.Balance(ctx, pubKey)
+	if err != nil {
+		return balance, err
+	}
+
+	addr, err := types.AccAddressFromHex(pubKey.Address().String())
+	if err != nil {
+		return balance, err
+	}
+
+	return Balance{
+		Address: addr.String(),
+		Balance: int(nodeBalance.Balance.Amount.Uint64()),
+	}, nil
+}
+
 func (as *Service) Wallet(ID string) (Wallet, error) {
 	var wallet Wallet
 
-	walletBytes, err := as.db.Get(walletKey(ID))
+	waKey := walletKey(ID)
+
+	hasWallet, err := as.db.Has(waKey)
+	if err != nil {
+		return wallet, err
+	}
+
+	if !hasWallet {
+		return wallet, ErrAccountNotExists
+	}
+
+	walletBytes, err := as.db.Get(waKey)
 	if err != nil {
 		return wallet, err
 	}
@@ -125,7 +161,7 @@ func (as *Service) Wallet(ID string) (Wallet, error) {
 	b := bytes.NewBuffer(walletBytes)
 	dec := gob.NewDecoder(b)
 
-	if err = dec.Decode(&wallet); err != nil {
+	if err := dec.Decode(&wallet); err != nil {
 		return wallet, err
 	}
 

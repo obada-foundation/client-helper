@@ -26,7 +26,7 @@ func (rpub *public) getObit(w http.ResponseWriter, r *http.Request) {
 	localNFT, err := rpub.obitService.Get(key)
 
 	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, rpub.logger)
 		return
 	}
 
@@ -53,7 +53,7 @@ func (rpub *public) generateObit(w http.ResponseWriter, r *http.Request) {
 	var resp GenerateObitDIDResp
 
 	if err := render.DecodeJSON(http.MaxBytesReader(w, r.Body, hardBodyLimit), &requestData); err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't decode request data", rest.ErrDecode)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't decode request data", rest.ErrDecode, rpub.logger)
 		return
 	}
 
@@ -63,7 +63,7 @@ func (rpub *public) generateObit(w http.ResponseWriter, r *http.Request) {
 		requestData.PartNumber,
 	)
 	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, rpub.logger)
 		return
 	}
 
@@ -80,7 +80,7 @@ func (rpub *public) saveObit(w http.ResponseWriter, r *http.Request) {
 	var requestData services.NFTPayload
 
 	if err := render.DecodeJSON(http.MaxBytesReader(w, r.Body, hardBodyLimit), &requestData); err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't decode request data", rest.ErrDecode)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't decode request data", rest.ErrDecode, rpub.logger)
 		return
 	}
 
@@ -88,7 +88,7 @@ func (rpub *public) saveObit(w http.ResponseWriter, r *http.Request) {
 
 	localNFT, err := rpub.obitService.Save(requestData, wallet.GetObadaAddress())
 	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't save local NFT", rest.ErrDecode)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't save local NFT", rest.ErrDecode, rpub.logger)
 		return
 	}
 
@@ -106,13 +106,13 @@ func (rpub *public) generateChecksum(w http.ResponseWriter, r *http.Request) {
 	var resp GenerateObitChecksumResp
 
 	if err := render.DecodeJSON(http.MaxBytesReader(w, r.Body, hardBodyLimit), &requestData); err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't decode request data", rest.ErrDecode)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't decode request data", rest.ErrDecode, rpub.logger)
 		return
 	}
 
 	localNFT, capturedLog, err := rpub.obitService.MakeLocalNFT(requestData, true)
 	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, rpub.logger)
 		return
 	}
 
@@ -133,7 +133,7 @@ func (rpub *public) search(w http.ResponseWriter, r *http.Request) {
 
 	localNFTs, err := rpub.obitService.Search("")
 	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, rpub.logger)
 		return
 	}
 
@@ -148,7 +148,7 @@ func (rpub *public) uploadToChain(w http.ResponseWriter, r *http.Request) {
 	localNFT, err := rpub.obitService.Get(key)
 
 	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, rpub.logger)
 		return
 	}
 
@@ -160,7 +160,7 @@ func (rpub *public) uploadToChain(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		rpub.logger.Error(err)
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, rpub.logger)
 		return
 	}
 
