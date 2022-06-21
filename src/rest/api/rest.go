@@ -99,8 +99,8 @@ func (s *Rest) routes() chi.Router {
 			rauth.Use(mid.Authenticate(s.Auth))
 
 			rauth.Route("/accounts", func(account chi.Router) {
-				account.Post("/", s.accountsRest.createAccount)
-				account.Get("/me", s.accountsRest.myAccount)
+				account.Post("/", s.accountsRest.create)
+				account.Get("/my-balance", s.accountsRest.balance)
 			})
 		})
 

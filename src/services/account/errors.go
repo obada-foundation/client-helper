@@ -5,5 +5,6 @@ import (
 )
 
 var (
-	ErrAccountExists = errors.New("account already exists")
+	ErrAccountExists    = errors.New("account already exists")
+	ErrAccountNotExists = errors.New("account doesn't exists")
 )

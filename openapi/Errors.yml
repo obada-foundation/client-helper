@@ -6,6 +6,14 @@ NotFound:
       type: string
       default: Not found
 
+NotAuthorized:
+  description: A typical 401 error.
+  type: object
+  properties:
+    error:
+      type: string
+      default: Not authorized
+
 InternalServerError:
   description: A typical 500 error.
   type: object

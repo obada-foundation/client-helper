@@ -18,8 +18,48 @@ info:
 tags:
   - name: Obit
   - name: Utils
+  - name: Accounts
+
+security:
+  - bearerAuth: []
 
 paths:
+  /accounts/my-balance:
+    get:
+      summary: Shows account balance of OBADA address
+      operationId: balance
+      tags:
+        - Accounts
+      responses:
+        "200":
+          $ref: "#/components/responses/AccountBalance"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
+  /accounts:
+    post:
+      summary: Creates a new Account
+      description: "Creates a new account, using JWT uid as a internal user id"
+      operationId: createAccount
+      tags:
+        - Accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewAccountRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/NewAccountResponse"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
   /obit/checksum:
     post:
       summary: Generates Obit checksum
@@ -203,7 +243,15 @@ paths:
           $ref: "#/components/responses/NotFound"
 
 components:
+  securitySchemes:
+    bearerAuth:            # arbitrary name for the security scheme
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      
   schemas:
+    NewAccountRequest:
+      $ref: "definitions/Account.yml#/NewAccountRequest"
     GenerateObitDIDRequest:
       $ref: "definitions/Utils.yml#/GenerateObitDIDRequest"
     GenerateObitChecksumRequest:
@@ -218,6 +266,20 @@ components:
       $ref: "definitions/Obit.yml#/SaveObitRequest"
 
   responses:
+    AccountBalance:
+      description: "Account balance response"
+      content:
+        application/json:
+          schema:
+            $ref: "definitions/Account.yml#/AccountBalance"
+            
+    NewAccountResponse:
+      description: "Create new Account response"
+      content:
+        application/json:
+          schema:
+            $ref: "definitions/Account.yml#/Account"
+      
     Obit:
       description: ""
       content:
@@ -264,6 +326,13 @@ components:
         application/json:
           schema:
             $ref: "Errors.yml#/NotFound"
+
+    NotAuthorized:
+      description: The request is not authorized.
+      content:
+        application/json:
+          schema:
+            $ref: "Errors.yml#/NotAuthorized"
 
     UnprocessableEntity:
       description: The submitted entity could not be processed.

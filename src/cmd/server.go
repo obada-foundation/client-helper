@@ -11,16 +11,17 @@ import (
 	"github.com/obada-foundation/client-helper/services/account"
 	"github.com/obada-foundation/client-helper/services/pubkey"
 	"github.com/obada-foundation/client-helper/system/auth"
+	"github.com/obada-foundation/client-helper/system/obadanode"
 	"github.com/obada-foundation/client-helper/system/validate"
 )
 
 // ServerCommand with command line flags and env
 type ServerCommand struct {
-	Port    int        `long:"port" env:"SERVER_PORT" default:"9090" description:"port"`
-	Address string     `long:"address" env:"SERVER_ADDRESS" default:"" description:"listening address"`
-	SSL     SSLGroup   `group:"ssl" namespace:"ssl" env-namespace:"SSL"`
-	Auth    AuthGroup  `group:"auth" namespace:"auth" env-namespace:"AUTH"`
-	OBADA   OBADAGroup `group:"obada" namespace:"obada" env-namespace:"OBADA"`
+	Port    int       `long:"port" env:"SERVER_PORT" default:"9090" description:"port"`
+	Address string    `long:"address" env:"SERVER_ADDRESS" default:"" description:"listening address"`
+	SSL     SSLGroup  `group:"ssl" namespace:"ssl" env-namespace:"SSL"`
+	Auth    AuthGroup `group:"auth" namespace:"auth" env-namespace:"AUTH"`
+	Node    NodeGroup `group:"node" namespace:"node" env-namespace:"NODE"`
 
 	CommonOpts
 }
@@ -37,8 +38,8 @@ type SSLGroup struct {
 	Key  string `long:"key" env:"KEY" description:"path to key.pem file"`
 }
 
-// OBADAGroup defines options for connection to the blockchain node
-type OBADAGroup struct {
+// NodeGroup defines options for connection to the blockchain node
+type NodeGroup struct {
 	ChainID string `long:"chain-id" env:"CHAIN_ID" description:"" default:"obada-testnet"`
 	RpcURL  string `long:"rpc-url" env:"RPC_URL" description:"" default:"tcp://52.206.218.105:26657"`
 	GrpcURL string `long:"grpc-url" env:"GRPC_URL" description:"" default:"52.206.218.105:9090"`
@@ -81,7 +82,17 @@ func (s *ServerCommand) Execute(_ []string) error {
 // newServerApp prepares application and return it with all active parts
 // doesn't start anything
 func (s *ServerCommand) newServerApp() (*serverApp, error) {
+	nodeClient, err := obadanode.NewClient(
+		s.Node.ChainID,
+		s.Node.RpcURL,
+		s.Node.GrpcURL,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("initialize node connection: %w", err)
+	}
+
 	sslConfig := s.makeSSLConfig()
+
 	ks, err := pubkey.NewFS(s.Auth.KeysFolder)
 	if err != nil {
 		return nil, fmt.Errorf("reading keys: %w", err)
@@ -100,7 +111,7 @@ func (s *ServerCommand) newServerApp() (*serverApp, error) {
 	}
 
 	// Account service manage OBADA wallets
-	account := account.NewService(validator, s.DB)
+	account := account.NewService(validator, s.DB, nodeClient)
 
 	srv := &api.Rest{
 		AccountService: account,
