@@ -9,9 +9,14 @@ import (
 )
 
 func (c NodeClient) Balance(ctx context.Context, pubKey cryptotypes.PubKey) (*banktypes.QueryBalanceResponse, error) {
+	addr, err := types.AccAddressFromHex(pubKey.Address().String())
+	if err != nil {
+		return nil, err
+	}
+
 	req := &banktypes.QueryBalanceRequest{
-		Address: types.AccAddress(pubKey.Address().Bytes()).String(),
-		Denom:   "OBD",
+		Address: addr.String(),
+		Denom:   "obd",
 	}
 
 	res, err := c.bankClient.Balance(ctx, req)
