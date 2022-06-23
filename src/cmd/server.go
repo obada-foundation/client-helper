@@ -12,6 +12,7 @@ import (
 	"github.com/obada-foundation/client-helper/services/device"
 	"github.com/obada-foundation/client-helper/services/pubkey"
 	"github.com/obada-foundation/client-helper/system/auth"
+	"github.com/obada-foundation/client-helper/system/ipfs"
 	"github.com/obada-foundation/client-helper/system/obadanode"
 	"github.com/obada-foundation/client-helper/system/validate"
 	"github.com/obada-foundation/sdkgo"
@@ -24,6 +25,7 @@ type ServerCommand struct {
 	SSL     SSLGroup  `group:"ssl" namespace:"ssl" env-namespace:"SSL"`
 	Auth    AuthGroup `group:"auth" namespace:"auth" env-namespace:"AUTH"`
 	Node    NodeGroup `group:"node" namespace:"node" env-namespace:"NODE"`
+	IPFS    IPFSGroup `group:"ipfs" namespace:"ipfs" env-namespace:"IPFS"`
 
 	CommonOpts
 }
@@ -45,6 +47,10 @@ type NodeGroup struct {
 	ChainID string `long:"chain-id" env:"CHAIN_ID" description:"" default:"obada-testnet"`
 	RpcURL  string `long:"rpc-url" env:"RPC_URL" description:"" default:"tcp://52.206.218.105:26657"`
 	GrpcURL string `long:"grpc-url" env:"GRPC_URL" description:"" default:"52.206.218.105:9090"`
+}
+
+type IPFSGroup struct {
+	URL string `long:"url" env:"URL" description:"IPFS API url to connet for storing documents" default:"obada-testnet"`
 }
 
 // serverApp holds all active objects
@@ -120,6 +126,9 @@ func (s *ServerCommand) newServerApp() (*serverApp, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// IPFS shell intialization
+	ipfsShell := ipfs.NewIPFS(s.IPFS.URL)
 
 	deviceSvc := device.NewService(validator, s.DB, sdk)
 

@@ -13,6 +13,7 @@ import (
 	"github.com/obada-foundation/client-helper/system/db"
 	"github.com/obada-foundation/client-helper/system/encoder"
 	"github.com/obada-foundation/client-helper/system/filecrypt"
+	ipfssh "github.com/obada-foundation/client-helper/system/ipfs"
 	"github.com/obada-foundation/client-helper/system/validate"
 	"github.com/obada-foundation/client-helper/utils"
 	"github.com/obada-foundation/sdkgo"
@@ -24,13 +25,16 @@ type Service struct {
 	validator *validate.Validator
 	db        db.DB
 	obadasdk  *sdkgo.Sdk
+	ipfs      *ipfssh.IPFS
 }
 
-func NewService(v *validate.Validator, db db.DB, sdk *sdkgo.Sdk) *Service {
+func NewService(v *validate.Validator, db db.DB, sdk *sdkgo.Sdk, ipfs *ipfssh.IPFS) *Service {
+
 	return &Service{
 		validator: v,
 		db:        db,
 		obadasdk:  sdk,
+		ipfs:      ipfs,
 	}
 }
 
@@ -76,12 +80,15 @@ func (ds *Service) handleDocuments(sd SaveDevice) ([]DeviceDocument, string, err
 		}
 
 		if sd.EncryptDocuments {
-			encryptedBytes, err := filecrypt.Encrypt(documentBytes, secret)
+			documentBytes, err = filecrypt.Encrypt(documentBytes, secret)
 			if err != nil {
 				return documents, secret, err
 			}
-			log.Printf("base64: %+v\norigin: %+v\nencrypted with %s: %+v", d.File, string(documentBytes), secret, string(encryptedBytes))
+		}
 
+		cid, err := ds.ipfs.CreateDocument(documentBytes)
+		if err != nil {
+			return documents, secret, err
 		}
 
 		document := DeviceDocument{
