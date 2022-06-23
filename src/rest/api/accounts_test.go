@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"strings"
 
 	"github.com/obada-foundation/client-helper/services/account"
@@ -68,7 +69,9 @@ func TestAccount_balance(t *testing.T) {
 	require.Equal(t, http.StatusNotFound, resp.StatusCode, string(b))
 	assert.NoError(t, resp.Body.Close())
 
-	_, err = srv.AccountService.Create(account.NewAccount{
+	ctx := context.Background()
+
+	_, err = srv.AccountService.Create(ctx, account.NewAccount{
 		ID:    "3",
 		Email: "foo@bar.com",
 	})

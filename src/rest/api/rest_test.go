@@ -1,12 +1,16 @@
 package api
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/obada-foundation/client-helper/services/account"
+	"github.com/obada-foundation/client-helper/services/device"
 	"github.com/obada-foundation/client-helper/services/pubkey"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/db"
 	"github.com/obada-foundation/client-helper/system/logger"
+	"github.com/obada-foundation/client-helper/system/obadanode"
 	"github.com/obada-foundation/client-helper/system/validate"
+	"github.com/obada-foundation/sdkgo"
 	"github.com/stretchr/testify/assert"
 
 	"fmt"
@@ -18,6 +22,12 @@ import (
 )
 
 var devToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSIsImtpZCI6Ijg1YmIyMTY1LTkwZTEtNDEzNC1hZjNlLTkwYTRhMGUxZTJjMSJ9.eyJpYXQiOjE2NTU3NjM0OTcsInVpZCI6IjMifQ.zhz_vw4uBLo8QTXqHMWv_yRQhYIR99-mcWMgB_Zn0ylQyc9glyfm9-WfZ_ji15QL5TFkNgqQHTtzyz-F3OBkBQ"
+
+func init() {
+	config := sdk.GetConfig()
+	config.SetBech32PrefixForAccount("obada", "obada"+sdk.PrefixPublic)
+	config.Seal()
+}
 
 // startupT runs fully configured testing server
 // srvHook is an optional func to set some Rest param after the creation but prior to Run
@@ -31,7 +41,19 @@ func startupT(t *testing.T, srvHook ...func(srv *Rest)) (ts *httptest.Server, sr
 	database, err := db.NewDB("client-helper-test", db.MemDBBackend, ".")
 	assert.NoError(t, err)
 
-	accountSvc := account.NewService(validator, database)
+	nodeClient, err := obadanode.NewClient(
+		"obada-testnet",
+		"tcp://52.206.218.105:26657",
+		"52.206.218.105:9090",
+	)
+	assert.NoError(t, err, "Cannot OBADA Node client")
+
+	accountSvc := account.NewService(validator, database, nodeClient)
+
+	sdk, err := sdkgo.NewSdk(nil, false)
+	assert.NoError(t, err, "SDK initialization")
+
+	deviceSvc := device.NewService(validator, database, sdk)
 
 	ks, err := pubkey.NewFS("./testdata")
 	assert.NoError(t, err, "reading keys")
@@ -43,12 +65,15 @@ func startupT(t *testing.T, srvHook ...func(srv *Rest)) (ts *httptest.Server, sr
 	srv = &Rest{
 		Auth:           auth,
 		Logger:         logger,
+		DeviceService:  deviceSvc,
 		AccountService: accountSvc,
 	}
 
 	ts = httptest.NewServer(srv.routes())
 
 	teardown = func() {
+		nodeClient.Close()
+		database.Close()
 		ts.Close()
 	}
 

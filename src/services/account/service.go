@@ -74,7 +74,7 @@ func (as *Service) createWallet(walletKey []byte, batch db.Batch) (Wallet, error
 }
 
 // Create creates a new account based on given email, returns an access token for helper API
-func (as *Service) Create(na NewAccount) (Account, error) {
+func (as *Service) Create(ctx context.Context, na NewAccount) (Account, error) {
 	var acc Account
 
 	if err := as.validator.Check(na); err != nil {
@@ -111,17 +111,15 @@ func (as *Service) Create(na NewAccount) (Account, error) {
 	return account, nil
 }
 
-func (as *Service) Balance(ID string) (Balance, error) {
+func (as *Service) Balance(ctx context.Context, ID string) (Balance, error) {
 	var balance Balance
 
-	wallet, err := as.Wallet(ID)
+	wallet, err := as.Wallet(ctx, ID)
 	if err != nil {
 		return balance, err
 	}
 
 	pubKey := wallet.PrivateKey.PubKey()
-
-	ctx := context.Background()
 
 	nodeBalance, err := as.nodeClient.Balance(ctx, pubKey)
 	if err != nil {
@@ -139,7 +137,7 @@ func (as *Service) Balance(ID string) (Balance, error) {
 	}, nil
 }
 
-func (as *Service) Wallet(ID string) (Wallet, error) {
+func (as *Service) Wallet(ctx context.Context, ID string) (Wallet, error) {
 	var wallet Wallet
 
 	waKey := walletKey(ID)
@@ -168,7 +166,7 @@ func (as *Service) Wallet(ID string) (Wallet, error) {
 	return wallet, nil
 }
 
-func (as *Service) Find(ID string) (Account, error) {
+func (as *Service) Find(ctx context.Context, ID string) (Account, error) {
 	var account Account
 
 	accountBytes, err := as.db.Get(accountKey(ID))

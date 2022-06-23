@@ -1,9 +1,11 @@
 package account
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/google/uuid"
@@ -15,10 +17,6 @@ import (
 )
 
 func TestService(t *testing.T) {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount("obada", "obada"+sdk.PrefixPublic)
-	config.Seal()
-
 	t.Log("Testing Account Service")
 
 	v, err := validate.NewValidator()
@@ -45,7 +43,10 @@ func TestService(t *testing.T) {
 		Email: "jon.doe@supermail.com",
 	}
 
-	a, err := service.Create(na)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	a, err := service.Create(ctx, na)
 	require.NoError(t, err, "Cannot create account")
 
 	assert.Equal(t, na.ID, a.ID)
@@ -53,17 +54,17 @@ func TestService(t *testing.T) {
 
 	t.Log("Testing Account find by ID")
 
-	fa, err := service.Find(a.ID)
+	fa, err := service.Find(ctx, a.ID)
 	require.NoError(t, err, "Cannot find account that was previostly created")
 
 	assert.Equal(t, fa, a)
 
 	t.Log("Testing Account wallet fetch")
-	_, err = service.Wallet(a.ID)
+	_, err = service.Wallet(ctx, a.ID)
 	require.NoError(t, err, "Cannot fetch the wallet")
 
 	t.Log("Testing Account balance fetch")
-	balance, err := service.Balance(a.ID)
+	balance, err := service.Balance(ctx, a.ID)
 	require.NoError(t, err, "Cannot fetch the balance")
 
 	assert.Equal(t, 0, balance.Balance)
@@ -71,7 +72,7 @@ func TestService(t *testing.T) {
 
 	t.Log("Testing Account won't be created if already exists")
 
-	a, err = service.Create(na)
+	a, err = service.Create(ctx, na)
 	if err != nil {
 		if !errors.Is(err, ErrAccountExists) {
 			t.Fatalf("Cannot create account: %s", err.Error())
@@ -117,7 +118,7 @@ func TestService(t *testing.T) {
 	}
 
 	for _, tc := range validationTestCases {
-		_, err = service.Create(tc.given)
+		_, err = service.Create(ctx, tc.given)
 		if err != nil {
 			if !validate.IsFieldErrors(err) {
 				t.Fatalf(err.Error())

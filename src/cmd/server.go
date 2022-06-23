@@ -9,10 +9,12 @@ import (
 
 	"github.com/obada-foundation/client-helper/rest/api"
 	"github.com/obada-foundation/client-helper/services/account"
+	"github.com/obada-foundation/client-helper/services/device"
 	"github.com/obada-foundation/client-helper/services/pubkey"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/obadanode"
 	"github.com/obada-foundation/client-helper/system/validate"
+	"github.com/obada-foundation/sdkgo"
 )
 
 // ServerCommand with command line flags and env
@@ -111,10 +113,19 @@ func (s *ServerCommand) newServerApp() (*serverApp, error) {
 	}
 
 	// Account service manage OBADA wallets
-	account := account.NewService(validator, s.DB, nodeClient)
+	accountSvc := account.NewService(validator, s.DB, nodeClient)
+
+	// Device manager initialization
+	sdk, err := sdkgo.NewSdk(nil, false)
+	if err != nil {
+		return nil, err
+	}
+
+	deviceSvc := device.NewService(validator, s.DB, sdk)
 
 	srv := &api.Rest{
-		AccountService: account,
+		AccountService: accountSvc,
+		DeviceService:  deviceSvc,
 		Logger:         s.Logger,
 		SSLConfig:      sslConfig,
 		Auth:           a,

@@ -15,6 +15,7 @@ import (
 	mid "github.com/obada-foundation/client-helper/rest/api/middleware"
 	"github.com/obada-foundation/client-helper/services"
 	"github.com/obada-foundation/client-helper/services/account"
+	"github.com/obada-foundation/client-helper/services/device"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/sdkgo"
 	"go.uber.org/zap"
@@ -29,6 +30,7 @@ type Rest struct {
 	ClientHelperURL string
 	Auth            *auth.Auth
 	AccountService  *account.Service
+	DeviceService   *device.Service
 	DB              *badger.DB
 	Logger          *zap.SugaredLogger
 	SSLConfig       SSLConfig
@@ -36,8 +38,9 @@ type Rest struct {
 	httpsServer     *http.Server
 	lock            sync.Mutex
 
-	pubRest      public
-	accountsRest accounts
+	pubRest     public
+	accountRest accountGroup
+	deviceRest  deviceGroup
 }
 
 // Run the lister and request's router, activate rest server
@@ -90,7 +93,7 @@ func (s *Rest) routes() chi.Router {
 	router.Use(chimid.Throttle(1000), chimid.RealIP, mid.Recoverer(s.Logger))
 	router.Use(mid.AppInfo("Client Helper", "OBADA Foundation", s.Version), mid.Ping)
 
-	s.pubRest, s.accountsRest = s.controllerGroups() // assign controllers for groups
+	s.pubRest, s.accountRest, s.deviceRest = s.controllerGroups() // assign controllers for groups
 
 	// api routes
 	router.Route("/api/v1", func(rapi chi.Router) {
@@ -99,8 +102,16 @@ func (s *Rest) routes() chi.Router {
 			rauth.Use(mid.Authenticate(s.Auth))
 
 			rauth.Route("/accounts", func(account chi.Router) {
-				account.Post("/", s.accountsRest.create)
-				account.Get("/my-balance", s.accountsRest.balance)
+				account.Post("/", s.accountRest.create)
+				account.Get("/my-balance", s.accountRest.balance)
+			})
+
+			rauth.Route("/obits", func(obits chi.Router) {
+				obits.Get("/{key}", s.deviceRest.get)
+				obits.Post("/", s.deviceRest.save)
+				obits.Get("/", s.pubRest.search)
+				obits.Get("/{key}/to-chain", s.pubRest.uploadToChain)
+				obits.Get("/{key}/from-chain", s.pubRest.downloadFromChain)
 			})
 		})
 
@@ -108,39 +119,36 @@ func (s *Rest) routes() chi.Router {
 			obit.Post("/did", s.pubRest.generateObit)
 			obit.Post("/checksum", s.pubRest.generateChecksum)
 		})
-
-		rapi.Route("/obits", func(obits chi.Router) {
-			obits.Get("/{key}", s.pubRest.getObit)
-			obits.Post("/", s.pubRest.saveObit)
-			obits.Get("/", s.pubRest.search)
-			obits.Get("/{key}/to-chain", s.pubRest.uploadToChain)
-			obits.Get("/{key}/from-chain", s.pubRest.downloadFromChain)
-		})
 	})
 
 	return router
 }
 
-func (s *Rest) controllerGroups() (public, accounts) {
-	sdk, _ := sdkgo.NewSdk(zap.NewStdLog(s.Logger.Desugar()), false)
+func (s *Rest) controllerGroups() (public, accountGroup, deviceGroup) {
+	deviceGrp := deviceGroup{
+		logger:    s.Logger,
+		deviceSvc: s.DeviceService,
+	}
+
+	accountGrp := accountGroup{
+		logger:     s.Logger,
+		accountSvc: s.AccountService,
+	}
+
+	sdk, _ := sdkgo.NewSdk(nil, false)
 
 	obitSvc := services.NewObitService(s.Logger, s.DB, sdk)
 	obadaChain, _ := client.NewClient("obada-testnet", "tcp://52.206.218.105:26657", "52.206.218.105:9090")
 	walletSvc := wallet.NewWalletService()
 
-	pubGrp := public{
+	publicGrp := public{
 		logger:        s.Logger,
 		obitService:   obitSvc,
 		chainService:  &obadaChain,
 		walletService: walletSvc,
 	}
 
-	accountGrp := accounts{
-		logger:     s.Logger,
-		accountSvc: s.AccountService,
-	}
-
-	return pubGrp, accountGrp
+	return publicGrp, accountGrp, deviceGrp
 }
 
 // Shutdown rest http server

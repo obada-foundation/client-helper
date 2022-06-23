@@ -12,6 +12,18 @@ DocumentLink:
     document_file:
       type: string
       format: binary
+
+DeviceDocument:
+  description: Device Document
+  type: object
+  properties:
+    name:
+      type: string
+      description: Associative name of device document
+      example: "Link to device wipe report"
+    document_file:
+      type: string
+      format: base64
       
 SaveObitRequest:
   description: Request to save Obit
@@ -33,6 +45,15 @@ SaveObitRequest:
       type: string
       description: Serial number hashed with sha256 hash function
       example: "f6fc84c9f21c24907d6bee6eec38cabab5fa9a7be8c4a7827fe9e56f245bd2d5"
+    documents:
+      type: array
+      items:
+        $ref: "#/DeviceDocument"
+    encrypt_documents:
+      type: boolean
+      description: If true then client helper will encrypt documents with randomly generated key
+      default: true
+      
 
 Obit:
   description: OBADA record.

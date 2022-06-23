@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.0.2
 
 servers:
   - description: OBADA Production API
@@ -16,9 +16,9 @@ info:
     url: 'https://www.obada.io'
 
 tags:
+  - name: Accounts
   - name: Obit
   - name: Utils
-  - name: Accounts
 
 security:
   - bearerAuth: []
@@ -109,7 +109,7 @@ paths:
         - Obit
       requestBody:
         content:
-          application/json:
+          application/json::
             schema:
               $ref: '#/components/schemas/SaveObitRequest'
       responses:
@@ -221,7 +221,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /obits/{obit_did}/history:
+  /obits/{key}/history:
     get:
       tags:
         - Obit
@@ -229,7 +229,7 @@ paths:
       description: Shows the history of changes by given Obit with ObitDID or USN
       operationId: history
       parameters:
-        - name: obit_did
+        - name: key
           in: path
           description: The given ObitDID or USN argument
           required: true

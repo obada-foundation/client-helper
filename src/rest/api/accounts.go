@@ -10,30 +10,30 @@ import (
 	"go.uber.org/zap"
 )
 
-type accounts struct {
+type accountGroup struct {
 	accountSvc *account.Service
 	logger     *zap.SugaredLogger
 }
 
-func (ra *accounts) create(w http.ResponseWriter, r *http.Request) {
+func (agrp *accountGroup) create(w http.ResponseWriter, r *http.Request) {
 	var newAccount account.NewAccount
 
 	claims, err := auth.GetClaims(r.Context())
 	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, ra.logger)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, agrp.logger)
 		return
 	}
 
 	if err := render.DecodeJSON(http.MaxBytesReader(w, r.Body, hardBodyLimit), &newAccount); err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't decode request data", rest.ErrDecode, ra.logger)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't decode request data", rest.ErrDecode, agrp.logger)
 		return
 	}
 
 	newAccount.ID = claims.UserID
 
-	account, err := ra.accountSvc.Create(newAccount)
+	account, err := agrp.accountSvc.Create(r.Context(), newAccount)
 	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, ra.logger)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, agrp.logger)
 		return
 	}
 
@@ -41,20 +41,20 @@ func (ra *accounts) create(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, &account)
 }
 
-func (ra *accounts) balance(w http.ResponseWriter, r *http.Request) {
+func (agrp *accountGroup) balance(w http.ResponseWriter, r *http.Request) {
 	claims, err := auth.GetClaims(r.Context())
 	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, ra.logger)
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, agrp.logger)
 		return
 	}
 
-	balance, err := ra.accountSvc.Balance(claims.UserID)
+	balance, err := agrp.accountSvc.Balance(r.Context(), claims.UserID)
 	if err != nil {
 		switch err {
 		case account.ErrAccountNotExists:
-			rest.SendErrorJSON(w, r, http.StatusNotFound, err, "", rest.ErrDecode, ra.logger)
+			rest.SendErrorJSON(w, r, http.StatusNotFound, err, "", rest.ErrDecode, agrp.logger)
 		default:
-			rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, ra.logger)
+			rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, agrp.logger)
 		}
 		return
 	}
