@@ -6,7 +6,7 @@ COPY ./src /src
 
 WORKDIR /src
 
-RUN go build -o /client-helper main.go
+RUN CGO_ENABLED=0 go build -o /client-helper main.go
 
 FROM alpine:3.14
 

@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/obada-foundation/client-helper/cmd"
 	"github.com/obada-foundation/client-helper/system/db"
 	"github.com/obada-foundation/client-helper/system/logger"
@@ -18,6 +19,12 @@ var revision = "unknown"
 type opts struct {
 	DBPath    string            `long:"db-path" env:"DB_PATH" description:"Show verbose debug information" default:"/home/client-helper/data"`
 	ServerCmd cmd.ServerCommand `command:"server"`
+}
+
+func init() {
+	config := sdk.GetConfig()
+	config.SetBech32PrefixForAccount("obada", "obada"+sdk.PrefixPublic)
+	config.Seal()
 }
 
 func main() {

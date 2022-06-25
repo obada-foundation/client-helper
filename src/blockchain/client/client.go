@@ -33,12 +33,6 @@ type ObadaChainClient struct {
 	chainID  string
 }
 
-func init() {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount("obada", "obada"+sdk.PrefixPublic)
-	config.Seal()
-}
-
 func NewClient(chainID, rpcURI, grpcURI string) (ObadaChainClient, error) {
 	var (
 		c = ObadaChainClient{

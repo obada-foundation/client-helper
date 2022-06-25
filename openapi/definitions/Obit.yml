@@ -1,17 +1,40 @@
-DocumentLink:
+Document:
   description: Document hashlink
   type: object
-  required:
-    - name
-    - hashlink
   properties:
     name:
       type: string
-      description: Associative name of hashlink
+      description: Associative name of file
+      example: "Link to device wipe report"
+    uri:
+      type: string
+      description: Link to the document
+    hash:
+      type: string
+      description: Hash of the file
+    encrypted:
+      type: boolean
+      description: If true then client helper will encrypt document with account key
+    
+DeviceDocument:
+  description: Device Document
+  type: object
+  required:
+    - name
+    - document_file
+  properties:
+    name:
+      type: string
+      description: Associative name of device document
       example: "Link to device wipe report"
     document_file:
       type: string
-      format: binary
+      format: base64
+    should_encrypt:
+      type: boolean
+      description: If true then client helper will encrypt document with account key
+      default: true
+      
       
 SaveObitRequest:
   description: Request to save Obit
@@ -33,6 +56,10 @@ SaveObitRequest:
       type: string
       description: Serial number hashed with sha256 hash function
       example: "f6fc84c9f21c24907d6bee6eec38cabab5fa9a7be8c4a7827fe9e56f245bd2d5"
+    documents:
+      type: array
+      items:
+        $ref: "#/DeviceDocument"
 
 Obit:
   description: OBADA record.
@@ -73,11 +100,10 @@ Obit:
       description: "JWT token from the trust anchor"
       type: string
     documents:
-      description: >
-        To generate this link, take an SHA-256 hash of the document, and link to it as https://www.some-website.com?h1=hash-of-document. Note this does not yet adhere to the hashlink standard.
+      description: "Documents that are attached to Obit"
       type: array
       items:
-        $ref: '#/DocumentLink'
+        $ref: '#/Document'
     checksum:
       description: >
         Hash calculated by SHA256 (previous Obit checksum + Obit data).

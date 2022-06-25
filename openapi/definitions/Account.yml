@@ -1,0 +1,34 @@
+NewAccountRequest:
+  description: New account create payload
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      description: Account owner email, will be used for verification purpose
+      example: "john.doe@obada.io"
+
+Account:
+  description: ClientHelper account
+  type: object
+  required:
+    - email
+  properties:
+    id:
+      type: string
+      description: Account owner id
+    email:
+      type: string
+      description: Account owner email, will be used for verification purpose
+      example: "john.doe@obada.io"
+
+AccountBalance:
+  description: OBADA Account balance
+  type: object
+  properties:
+    address:
+      type: string
+    balance:
+      type: integer
+      format: int64
