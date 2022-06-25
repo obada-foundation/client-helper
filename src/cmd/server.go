@@ -50,7 +50,7 @@ type NodeGroup struct {
 }
 
 type IPFSGroup struct {
-	URL string `long:"url" env:"URL" description:"IPFS API url to connet for storing documents" default:"obada-testnet"`
+	RPC_URL string `long:"url" env:"RPC_URL" description:"IPFS RPC url to connect"`
 }
 
 // serverApp holds all active objects
@@ -128,9 +128,9 @@ func (s *ServerCommand) newServerApp() (*serverApp, error) {
 	}
 
 	// IPFS shell intialization
-	ipfsShell := ipfs.NewIPFS(s.IPFS.URL)
+	ipfsShell := ipfs.NewIPFS(s.IPFS.RPC_URL)
 
-	deviceSvc := device.NewService(validator, s.DB, sdk)
+	deviceSvc := device.NewService(validator, s.DB, sdk, ipfsShell)
 
 	srv := &api.Rest{
 		AccountService: accountSvc,

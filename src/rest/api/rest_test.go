@@ -7,6 +7,7 @@ import (
 	"github.com/obada-foundation/client-helper/services/pubkey"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/db"
+	"github.com/obada-foundation/client-helper/system/ipfs"
 	"github.com/obada-foundation/client-helper/system/logger"
 	"github.com/obada-foundation/client-helper/system/obadanode"
 	"github.com/obada-foundation/client-helper/system/validate"
@@ -53,7 +54,9 @@ func startupT(t *testing.T, srvHook ...func(srv *Rest)) (ts *httptest.Server, sr
 	sdk, err := sdkgo.NewSdk(nil, false)
 	assert.NoError(t, err, "SDK initialization")
 
-	deviceSvc := device.NewService(validator, database, sdk)
+	ipfsShell := ipfs.NewIPFS("http://localhost:5001")
+
+	deviceSvc := device.NewService(validator, database, sdk, ipfsShell)
 
 	ks, err := pubkey.NewFS("./testdata")
 	assert.NoError(t, err, "reading keys")

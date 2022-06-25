@@ -8,6 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/cosmos/cosmos-sdk/types"
+	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/db"
 	"github.com/obada-foundation/client-helper/system/encoder"
 	"github.com/obada-foundation/client-helper/system/obadanode"
@@ -111,10 +112,10 @@ func (as *Service) Create(ctx context.Context, na NewAccount) (Account, error) {
 	return account, nil
 }
 
-func (as *Service) Balance(ctx context.Context, ID string) (Balance, error) {
+func (as *Service) Balance(ctx context.Context) (Balance, error) {
 	var balance Balance
 
-	wallet, err := as.Wallet(ctx, ID)
+	wallet, err := as.Wallet(ctx)
 	if err != nil {
 		return balance, err
 	}
@@ -137,10 +138,15 @@ func (as *Service) Balance(ctx context.Context, ID string) (Balance, error) {
 	}, nil
 }
 
-func (as *Service) Wallet(ctx context.Context, ID string) (Wallet, error) {
+func (as *Service) Wallet(ctx context.Context) (Wallet, error) {
 	var wallet Wallet
 
-	waKey := walletKey(ID)
+	userID, err := auth.GetUserID(ctx)
+	if err != nil {
+		return wallet, err
+	}
+
+	waKey := walletKey(userID)
 
 	hasWallet, err := as.db.Has(waKey)
 	if err != nil {
@@ -166,10 +172,15 @@ func (as *Service) Wallet(ctx context.Context, ID string) (Wallet, error) {
 	return wallet, nil
 }
 
-func (as *Service) Find(ctx context.Context, ID string) (Account, error) {
+func (as *Service) Show(ctx context.Context) (Account, error) {
 	var account Account
 
-	accountBytes, err := as.db.Get(accountKey(ID))
+	userID, err := auth.GetUserID(ctx)
+	if err != nil {
+		return account, err
+	}
+
+	accountBytes, err := as.db.Get(accountKey(userID))
 	if err != nil {
 		return account, err
 	}

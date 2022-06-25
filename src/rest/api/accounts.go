@@ -18,7 +18,7 @@ type accountGroup struct {
 func (agrp *accountGroup) create(w http.ResponseWriter, r *http.Request) {
 	var newAccount account.NewAccount
 
-	claims, err := auth.GetClaims(r.Context())
+	userID, err := auth.GetUserID(r.Context())
 	if err != nil {
 		rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, agrp.logger)
 		return
@@ -29,7 +29,7 @@ func (agrp *accountGroup) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newAccount.ID = claims.UserID
+	newAccount.ID = userID
 
 	account, err := agrp.accountSvc.Create(r.Context(), newAccount)
 	if err != nil {
@@ -42,13 +42,7 @@ func (agrp *accountGroup) create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (agrp *accountGroup) balance(w http.ResponseWriter, r *http.Request) {
-	claims, err := auth.GetClaims(r.Context())
-	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, agrp.logger)
-		return
-	}
-
-	balance, err := agrp.accountSvc.Balance(r.Context(), claims.UserID)
+	balance, err := agrp.accountSvc.Balance(r.Context())
 	if err != nil {
 		switch err {
 		case account.ErrAccountNotExists:

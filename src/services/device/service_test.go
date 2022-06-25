@@ -6,8 +6,9 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/google/uuid"
+	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/db"
+	"github.com/obada-foundation/client-helper/system/ipfs"
 	"github.com/obada-foundation/client-helper/system/validate"
 	"github.com/obada-foundation/sdkgo"
 	"github.com/stretchr/testify/assert"
@@ -22,6 +23,10 @@ func TestService(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	ctx = auth.SetClaims(ctx, auth.Claims{
+		UserID: "1",
+	})
+
 	t.Log("Testing Device Service")
 
 	v, err := validate.NewValidator()
@@ -34,13 +39,13 @@ func TestService(t *testing.T) {
 	sdk, err := sdkgo.NewSdk(nil, false)
 	require.NoError(t, err, "Cannot intialize OBADA SDK")
 
-	service := NewService(v, db, sdk)
+	ipfsShell := ipfs.NewIPFS("http://localhost:5001")
 
-	accountID := uuid.New().String()
+	service := NewService(v, db, sdk, ipfsShell)
 
 	t.Log("\tTesting Device Save")
 
-	device, err := service.Save(ctx, accountID, SaveDevice{
+	device, err := service.Save(ctx, SaveDevice{
 		SerialNumber: "SN123456",
 		Manufacturer: "IBM",
 		PartNumber:   "PN123456",
@@ -69,7 +74,7 @@ func TestService(t *testing.T) {
 	}
 
 	for _, tc := range deviceGetCases {
-		getDevice, err := service.Get(ctx, accountID, tc.given)
+		getDevice, err := service.Get(ctx, tc.given)
 		require.NoError(t, err, "Cannot get device", tc.given)
 
 		assert.Equal(t, tc.want, getDevice)
@@ -103,7 +108,7 @@ func TestService(t *testing.T) {
 	}
 
 	for _, tc := range validationTestCases {
-		_, err := service.Save(ctx, accountID, tc.given)
+		_, err := service.Save(ctx, tc.given)
 		if err != nil {
 			if !validate.IsFieldErrors(err) {
 				t.Fatalf(err.Error())

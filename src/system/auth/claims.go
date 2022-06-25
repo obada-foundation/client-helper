@@ -45,3 +45,12 @@ func GetClaims(ctx context.Context) (Claims, error) {
 
 	return v, nil
 }
+
+func GetUserID(ctx context.Context) (string, error) {
+	claims, err := GetClaims(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return claims.UserID, nil
+}

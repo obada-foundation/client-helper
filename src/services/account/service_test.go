@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/google/uuid"
+	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/db"
 	"github.com/obada-foundation/client-helper/system/obadanode"
 	"github.com/obada-foundation/client-helper/system/validate"
@@ -17,6 +18,10 @@ import (
 )
 
 func TestService(t *testing.T) {
+	config := sdk.GetConfig()
+	config.SetBech32PrefixForAccount("obada", "obada"+sdk.PrefixPublic)
+	config.Seal()
+
 	t.Log("Testing Account Service")
 
 	v, err := validate.NewValidator()
@@ -46,6 +51,12 @@ func TestService(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	ctx = auth.SetClaims(ctx, auth.Claims{
+		UserID: "1",
+	})
+
+	na.ID = "1"
+
 	a, err := service.Create(ctx, na)
 	require.NoError(t, err, "Cannot create account")
 
@@ -54,17 +65,17 @@ func TestService(t *testing.T) {
 
 	t.Log("Testing Account find by ID")
 
-	fa, err := service.Find(ctx, a.ID)
+	fa, err := service.Show(ctx)
 	require.NoError(t, err, "Cannot find account that was previostly created")
 
 	assert.Equal(t, fa, a)
 
 	t.Log("Testing Account wallet fetch")
-	_, err = service.Wallet(ctx, a.ID)
+	_, err = service.Wallet(ctx)
 	require.NoError(t, err, "Cannot fetch the wallet")
 
 	t.Log("Testing Account balance fetch")
-	balance, err := service.Balance(ctx, a.ID)
+	balance, err := service.Balance(ctx)
 	require.NoError(t, err, "Cannot fetch the balance")
 
 	assert.Equal(t, 0, balance.Balance)

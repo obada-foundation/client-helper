@@ -7,9 +7,9 @@ import (
 	"io"
 )
 
-func Encrypt(plain []byte, secret string) ([]byte, error) {
+func Encrypt(plain []byte, secret []byte) ([]byte, error) {
 	// Create the AES cipher
-	block, err := aes.NewCipher([]byte(secret))
+	block, err := aes.NewCipher(secret)
 	if err != nil {
 		return []byte{}, err
 	}

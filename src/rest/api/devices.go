@@ -6,7 +6,6 @@ import (
 	"github.com/obada-foundation/client-helper/rest"
 	"github.com/obada-foundation/client-helper/services/account"
 	"github.com/obada-foundation/client-helper/services/device"
-	"github.com/obada-foundation/client-helper/system/auth"
 	"go.uber.org/zap"
 
 	"net/http"
@@ -21,18 +20,12 @@ type deviceGroup struct {
 func (dgroup *deviceGroup) save(w http.ResponseWriter, r *http.Request) {
 	var saveRequest device.SaveDevice
 
-	claims, err := auth.GetClaims(r.Context())
-	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, dgroup.logger)
-		return
-	}
-
 	if err := render.DecodeJSON(http.MaxBytesReader(w, r.Body, hardBodyLimit), &saveRequest); err != nil {
 		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't decode request data", rest.ErrDecode, dgroup.logger)
 		return
 	}
 
-	device, err := dgroup.deviceSvc.Save(r.Context(), claims.UserID, saveRequest)
+	device, err := dgroup.deviceSvc.Save(r.Context(), saveRequest)
 	if err != nil {
 		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "can't save device", rest.ErrDecode, dgroup.logger)
 		return
@@ -47,13 +40,7 @@ func (dgroup *deviceGroup) get(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	claims, err := auth.GetClaims(ctx)
-	if err != nil {
-		rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, dgroup.logger)
-		return
-	}
-
-	device, err := dgroup.deviceSvc.Get(ctx, claims.UserID, key)
+	device, err := dgroup.deviceSvc.Get(ctx, key)
 
 	if err != nil {
 		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, dgroup.logger)
