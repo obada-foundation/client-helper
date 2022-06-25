@@ -1,3 +1,0 @@
-package key
-
-interface KeyManager

@@ -1,16 +1,21 @@
 package ipfs
 
 import (
-	"context"
+	"bytes"
 	"fmt"
-	"log"
 
 	shell "github.com/ipfs/go-ipfs-api"
-	files "github.com/ipfs/go-ipfs-files"
 )
 
 type IPFS struct {
 	sh *shell.Shell
+}
+
+func Create(enabled bool) shell.AddOpts {
+	return func(rb *shell.RequestBuilder) error {
+		rb.Option("create", enabled)
+		return nil
+	}
 }
 
 func NewIPFS(rpcURL string) *IPFS {
@@ -19,39 +24,19 @@ func NewIPFS(rpcURL string) *IPFS {
 	}
 }
 
-func (s *IPFS) CreateDocument(ctx context.Context, DID, fileName string, data []byte) (string, error) {
-	dir := files.NewSliceDirectory([]files.DirEntry{
-		files.FileEntry(fileName, files.NewBytesFile(data)),
-	})
+func (s *IPFS) CreateDocument(data []byte, saveDocument bool) (string, error) {
+	bytes.NewBuffer(data)
 
-	reader := files.NewMultiFileReader(dir, true)
-
-	path := fmt.Sprintf("/%s/%s", DID, fileName)
-
-	// See info: https://docs.ipfs.io/reference/http/api/#api-v0-files-write
-	err := s.sh.Request("files/write").
-		Arguments(path).
-		Body(reader).
-		// Make parent directories as needed
-		Option("parents", true).
-		// Use raw blocks for newly created leaf nodes
-		Option("raw-leaves", true).
-		// Create the file if it does not exist
-		Option("create", true).
-		// CID version
-		Option("cid-version", 0).
-		Exec(ctx, nil)
-
+	cid, err := s.sh.Add(
+		bytes.NewBuffer(data),
+		shell.OnlyHash(!saveDocument),
+		Create(saveDocument),
+		shell.Pin(false),
+		shell.RawLeaves(true),
+	)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("cannot submit document to IPFS %w", err)
 	}
 
-	stat, err := s.sh.FilesStat(ctx, path)
-	if err != nil {
-		return "", err
-	}
-
-	log.Printf("File %+v", stat)
-
-	return stat.Hash, err
+	return cid, nil
 }

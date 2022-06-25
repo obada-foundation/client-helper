@@ -6,10 +6,10 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"strings"
 
-	cid "github.com/ipfs/go-cid"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/db"
 	"github.com/obada-foundation/client-helper/system/encoder"
@@ -38,29 +38,48 @@ func NewService(v *validate.Validator, db db.DB, sdk *sdkgo.Sdk, ipfs *ipfssh.IP
 	}
 }
 
-func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, saveDocs bool) ([]DeviceDocument, error) {
+func parentDocument(docName string, parentDocs []DeviceDocument) *DeviceDocument {
+	if len(parentDocs) == 0 {
+		return nil
+	}
+
+	for _, parentDoc := range parentDocs {
+		if docName == parentDoc.Name {
+			return &parentDoc
+		}
+	}
+
+	return nil
+}
+
+func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, parentDocs []DeviceDocument, saveDocs bool) ([]DeviceDocument, error) {
 	var (
 		documents []DeviceDocument
-		builder   cid.V0Builder
+		secret    []byte
+		err       error
 	)
 
-	obitIDDto, err := sd.makeObitIDDto(sd.SerialNumber, sd.Manufacturer, sd.PartNumber)
-	if err != nil {
-		return documents, err
+	// If we want to save documents to IPFS, we will need encryption for some of them
+	if saveDocs {
+		obitIDDto, err := makeObitIDDto(sd.SerialNumber, sd.Manufacturer, sd.PartNumber)
+		if err != nil {
+			return documents, err
+		}
+
+		obitID, err := ds.obadasdk.NewObitID(obitIDDto)
+		if err != nil {
+			return documents, err
+		}
+
+		DID := obitID.GetDid()
+
+		secret, err = ds.EncryptionSecret(ctx, DID)
+		if err != nil {
+			return documents, err
+		}
 	}
 
-	obitID, err := ds.obadasdk.NewObitID(obitIDDto)
-	if err != nil {
-		return documents, err
-	}
-
-	DID := obitID.GetDid()
-
-	secret, err := ds.EncryptionSecret(ctx, DID)
-	if err != nil {
-		return documents, err
-	}
-
+	// Special document type that cover a serial number
 	sd.Documents = append(
 		sd.Documents,
 		SaveDeviceDocument{Name: string(PhysicalAssetIdentifier), ShouldEncrypt: true},
@@ -70,7 +89,7 @@ func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, saveDocs 
 		var documentBytes []byte
 
 		switch d.Name {
-		// We add this type of document for every device that we create
+
 		case string(PhysicalAssetIdentifier):
 			paiDoc := fmt.Sprintf(
 				`{"serial_number":"%s","manufacturer":"%s","part_number":"%s"}`,
@@ -90,31 +109,32 @@ func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, saveDocs 
 		// Take a hash of origin content
 		hash := fmt.Sprintf("%x", sha256.Sum256(documentBytes))
 
+		// When we have this document in parentDocs and hashes matches
+		// we don't need to go over encryption and saving to IPFS
+		pd := parentDocument(d.Name, parentDocs)
+		if pd != nil && pd.Hash == hash && d.ShouldEncrypt == pd.Encrypted {
+			documents = append(documents, *pd)
+
+			continue
+		}
+
 		// Encrypt document when true
-		if d.ShouldEncrypt {
+		if saveDocs && d.ShouldEncrypt {
 			documentBytes, err = filecrypt.Encrypt(documentBytes, secret)
 			if err != nil {
 				return documents, err
 			}
 		}
 
-		c, err := builder.Sum(documentBytes)
+		cid, err := ds.ipfs.CreateDocument(documentBytes, saveDocs)
 		if err != nil {
 			return documents, err
-		}
-
-		if saveDocs {
-			_, err = ds.ipfs.CreateDocument(ctx, DID, d.Name, documentBytes)
-
-			if err != nil {
-				return documents, err
-			}
 		}
 
 		document := DeviceDocument{
 			Name:      d.Name,
 			Hash:      hash,
-			URI:       fmt.Sprintf("ipfs://%s", c.String()),
+			URI:       fmt.Sprintf("ipfs://%s", cid),
 			Encrypted: d.ShouldEncrypt,
 		}
 
@@ -125,7 +145,10 @@ func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, saveDocs 
 }
 
 func (ds *Service) Save(ctx context.Context, sd SaveDevice) (Device, error) {
-	var device Device
+	var (
+		device       Device
+		parentDevice Device
+	)
 
 	userID, err := auth.GetUserID(ctx)
 	if err != nil {
@@ -136,17 +159,27 @@ func (ds *Service) Save(ctx context.Context, sd SaveDevice) (Device, error) {
 		return device, err
 	}
 
-	obitIDDto, err := sd.makeObitIDDto(sd.SerialNumber, sd.Manufacturer, sd.PartNumber)
+	dto, err := makeObitIDDto(sd.SerialNumber, sd.Manufacturer, sd.PartNumber)
 	if err != nil {
 		return device, err
 	}
 
-	obitID, err := ds.obadasdk.NewObitID(obitIDDto)
+	obitID, err := ds.obadasdk.NewObitID(dto)
 	if err != nil {
 		return device, err
 	}
 
-	device, err = ds.NewDevice(ctx, sd, true)
+	parentDevice, err = ds.Get(ctx, obitID.GetDid())
+	if err != nil && !errors.Is(err, ErrDeviceNotExists) {
+		return device, err
+	}
+
+	documents, err := ds.handleDocuments(ctx, sd, parentDevice.Documents, true)
+	if err != nil {
+		return device, err
+	}
+
+	device, err = newDevice(ds.obadasdk, sd, documents, &parentDevice)
 	if err != nil {
 		return device, fmt.Errorf("Cannot make device from given data %+v %w", sd, err)
 	}
@@ -159,9 +192,7 @@ func (ds *Service) Save(ctx context.Context, sd SaveDevice) (Device, error) {
 		return device, err
 	}
 
-	DID := obitID.GetDid()
-
-	DIDkey := makeDIDKey(userID, DID)
+	DIDkey := makeDIDKey(userID, obitID.GetDid())
 
 	if err := batch.Set(DIDkey, deviceBytes); err != nil {
 		return device, err
@@ -176,42 +207,6 @@ func (ds *Service) Save(ctx context.Context, sd SaveDevice) (Device, error) {
 	}
 
 	return device, nil
-}
-
-func (ds *Service) NewDevice(ctx context.Context, sd SaveDevice, saveDocuments bool) (Device, error) {
-	var d Device
-
-	if err := ds.validator.Check(sd); err != nil {
-		return d, err
-	}
-
-	documents, err := ds.handleDocuments(ctx, sd, saveDocuments)
-	if err != nil {
-		return d, fmt.Errorf("Cannot handle device documents %+v %w", documents, err)
-	}
-
-	obit, err := ds.makeSdkObit(ds.obadasdk, sd)
-	if err != nil {
-		return d, fmt.Errorf("Cannot create Obit from given data %+v %w", sd, err)
-	}
-
-	checksum, err := obit.GetChecksum(nil)
-	if err != nil {
-		return d, fmt.Errorf("Cannot get Obit checksum from given data %+v %w", sd, err)
-	}
-
-	did := obit.GetObitID()
-
-	return Device{
-		Usn:              did.GetUsn(),
-		DID:              did.GetDid(),
-		Checksum:         checksum.GetHash(),
-		SerialNumberHash: obit.GetSerialNumberHash().GetValue(),
-		Manufacturer:     obit.GetManufacturer().GetValue(),
-		PartNumber:       obit.GetPartNumber().GetValue(),
-		TrustAnchorToken: obit.GetTrustAnchorToken().GetValue(),
-		Documents:        documents,
-	}, nil
 }
 
 // Get
