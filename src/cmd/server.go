@@ -119,7 +119,7 @@ func (s *ServerCommand) newServerApp() (*serverApp, error) {
 	}
 
 	// Account service manage OBADA wallets
-	accountSvc := account.NewService(validator, s.DB, nodeClient)
+	accountSvc := account.NewService(validator, s.DB, &nodeClient)
 
 	// Device manager initialization
 	sdk, err := sdkgo.NewSdk(nil, false)
@@ -130,7 +130,7 @@ func (s *ServerCommand) newServerApp() (*serverApp, error) {
 	// IPFS shell intialization
 	ipfsShell := ipfs.NewIPFS(s.IPFS.RPC_URL)
 
-	deviceSvc := device.NewService(validator, s.DB, sdk, ipfsShell)
+	deviceSvc := device.NewService(validator, s.DB, sdk, ipfsShell, &nodeClient)
 
 	srv := &api.Rest{
 		AccountService: accountSvc,

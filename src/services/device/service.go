@@ -10,31 +10,37 @@ import (
 	"fmt"
 	"strings"
 
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/db"
 	"github.com/obada-foundation/client-helper/system/encoder"
 	"github.com/obada-foundation/client-helper/system/filecrypt"
 	ipfssh "github.com/obada-foundation/client-helper/system/ipfs"
+	"github.com/obada-foundation/client-helper/system/obadanode"
 	"github.com/obada-foundation/client-helper/system/validate"
+	"github.com/obada-foundation/fullcore/x/obit/types"
 	"github.com/obada-foundation/sdkgo"
 )
 
 const USNLength = 8
 
 type Service struct {
-	validator *validate.Validator
-	db        db.DB
-	obadasdk  *sdkgo.Sdk
-	ipfs      *ipfssh.IPFS
+	validator  *validate.Validator
+	db         db.DB
+	obadasdk   *sdkgo.Sdk
+	ipfs       *ipfssh.IPFS
+	nodeClient *obadanode.NodeClient
 }
 
-func NewService(v *validate.Validator, db db.DB, sdk *sdkgo.Sdk, ipfs *ipfssh.IPFS) *Service {
+func NewService(v *validate.Validator, db db.DB, sdk *sdkgo.Sdk, ipfs *ipfssh.IPFS, nc *obadanode.NodeClient) *Service {
 
 	return &Service{
-		validator: v,
-		db:        db,
-		obadasdk:  sdk,
-		ipfs:      ipfs,
+		validator:  v,
+		db:         db,
+		obadasdk:   sdk,
+		ipfs:       ipfs,
+		nodeClient: nc,
 	}
 }
 
@@ -207,6 +213,40 @@ func (ds *Service) Save(ctx context.Context, sd SaveDevice) (Device, error) {
 	}
 
 	return device, nil
+}
+
+func (ds *Service) Mint(ctx context.Context, key string, priv cryptotypes.PrivKey) error {
+	var docs []types.NFTDocument
+
+	device, err := ds.Get(ctx, key)
+
+	if err != nil {
+		return err
+	}
+
+	accAddress := sdk.AccAddress(priv.PubKey().Address().Bytes()).String()
+
+	for _, d := range device.Documents {
+		docs = append(docs, types.NFTDocument{
+			Name: d.Name,
+			Uri:  d.URI,
+			Hash: d.Hash,
+		})
+	}
+
+	msg := &types.MsgMintObit{
+		Creator:          accAddress,
+		SerialNumberHash: device.SerialNumberHash,
+		Manufacturer:     device.Manufacturer,
+		PartNumber:       device.PartNumber,
+		Documents:        docs,
+	}
+
+	if _, err := ds.nodeClient.Mint(ctx, priv, msg); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Get

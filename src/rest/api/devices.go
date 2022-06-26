@@ -13,8 +13,27 @@ import (
 
 type deviceGroup struct {
 	deviceSvc  *device.Service
-	accountSvc *account.Account
+	accountSvc *account.Service
 	logger     *zap.SugaredLogger
+}
+
+func (dgroup *deviceGroup) mint(w http.ResponseWriter, r *http.Request) {
+	key := chi.URLParam(r, "key")
+
+	ctx := r.Context()
+
+	wallet, err := dgroup.accountSvc.Wallet(ctx)
+	if err != nil {
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, ErrBadRequest, "", rest.ErrDecode, dgroup.logger)
+		return
+	}
+
+	if err := dgroup.deviceSvc.Mint(ctx, key, &wallet.PrivateKey); err != nil {
+		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, dgroup.logger)
+		return
+	}
+
+	render.Status(r, http.StatusCreated)
 }
 
 func (dgroup *deviceGroup) save(w http.ResponseWriter, r *http.Request) {
@@ -38,10 +57,7 @@ func (dgroup *deviceGroup) save(w http.ResponseWriter, r *http.Request) {
 func (dgroup *deviceGroup) get(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
 
-	ctx := r.Context()
-
-	device, err := dgroup.deviceSvc.Get(ctx, key)
-
+	device, err := dgroup.deviceSvc.Get(r.Context(), key)
 	if err != nil {
 		rest.SendErrorJSON(w, r, http.StatusBadRequest, err, "", rest.ErrDecode, dgroup.logger)
 		return

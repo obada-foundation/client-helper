@@ -49,14 +49,14 @@ func startupT(t *testing.T, srvHook ...func(srv *Rest)) (ts *httptest.Server, sr
 	)
 	assert.NoError(t, err, "Cannot OBADA Node client")
 
-	accountSvc := account.NewService(validator, database, nodeClient)
+	accountSvc := account.NewService(validator, database, &nodeClient)
 
 	sdk, err := sdkgo.NewSdk(nil, false)
 	assert.NoError(t, err, "SDK initialization")
 
 	ipfsShell := ipfs.NewIPFS("http://localhost:5001")
 
-	deviceSvc := device.NewService(validator, database, sdk, ipfsShell)
+	deviceSvc := device.NewService(validator, database, sdk, ipfsShell, &nodeClient)
 
 	ks, err := pubkey.NewFS("./testdata")
 	assert.NoError(t, err, "reading keys")

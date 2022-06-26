@@ -150,7 +150,7 @@ paths:
           $ref: "#/components/responses/InternalServerError"
 
   /obits/{key}/to-chain:
-    get:
+    post:
       tags:
         - Obit
       summary: Uploads NFT to the blockchain

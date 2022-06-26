@@ -110,7 +110,8 @@ func (s *Rest) routes() chi.Router {
 				obits.Get("/{key}", s.deviceRest.get)
 				obits.Post("/", s.deviceRest.save)
 				obits.Get("/", s.pubRest.search)
-				obits.Get("/{key}/to-chain", s.pubRest.uploadToChain)
+				obits.Post("/{key}/to-chain", s.deviceRest.mint)
+				obits.Post("/{key}/transfer", s.deviceRest.mint)
 				obits.Get("/{key}/from-chain", s.pubRest.downloadFromChain)
 			})
 		})
@@ -126,8 +127,9 @@ func (s *Rest) routes() chi.Router {
 
 func (s *Rest) controllerGroups() (public, accountGroup, deviceGroup) {
 	deviceGrp := deviceGroup{
-		logger:    s.Logger,
-		deviceSvc: s.DeviceService,
+		logger:     s.Logger,
+		deviceSvc:  s.DeviceService,
+		accountSvc: s.AccountService,
 	}
 
 	accountGrp := accountGroup{

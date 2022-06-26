@@ -18,10 +18,10 @@ import (
 type Service struct {
 	validator  *validate.Validator
 	db         db.DB
-	nodeClient obadanode.NodeClient
+	nodeClient *obadanode.NodeClient
 }
 
-func NewService(v *validate.Validator, db db.DB, client obadanode.NodeClient) *Service {
+func NewService(v *validate.Validator, db db.DB, client *obadanode.NodeClient) *Service {
 	return &Service{
 		validator:  v,
 		db:         db,

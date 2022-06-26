@@ -16,8 +16,6 @@ import (
 	txtypes "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	"github.com/obada-foundation/client-helper/services"
-	obadatypes "github.com/obada-foundation/fullcore/x/obit/types"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc"
@@ -160,30 +158,4 @@ func (c NodeClient) Nonce(ctx context.Context, address string) (uint64, error) {
 	}
 
 	return acc.GetSequence(), nil
-}
-
-func (c *NodeClient) Mint(ctx context.Context, priv cryptotypes.PrivKey, localNFT services.LocalNFT) (*ctypes.ResultBroadcastTx, error) {
-	accAddress := sdk.AccAddress(priv.PubKey().Address().Bytes()).String()
-	nonce, err := c.Nonce(ctx, accAddress)
-
-	if err != nil {
-		return nil, err
-	}
-
-	msg := obadatypes.NewMsgMintObit(
-		accAddress,
-		localNFT.SerialNumberHash,
-		localNFT.Manufacturer,
-		localNFT.PartNumber,
-		localNFT.TrustAnchorToken,
-		"",
-		"",
-	)
-
-	res, err := c.SendTx(ctx, msg, priv, nonce)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
 }

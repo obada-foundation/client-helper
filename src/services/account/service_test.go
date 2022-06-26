@@ -39,7 +39,7 @@ func TestService(t *testing.T) {
 	defer nodeClient.Close()
 	require.NoError(t, err, "Cannot OBADA Node client")
 
-	service := NewService(v, db, nodeClient)
+	service := NewService(v, db, &nodeClient)
 
 	t.Log("Testing Account creation")
 
