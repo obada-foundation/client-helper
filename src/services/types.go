@@ -1,10 +1,25 @@
-package device
+package services
 
-type DocumentType string
+import "github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 
-const (
-	PhysicalAssetIdentifier DocumentType = "physical_asset_identifier"
-)
+type NewAccount struct {
+	ID    string `json:"-" validate:"required"`
+	Email string `json:"email" validate:"required,email"`
+}
+
+type Account struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+}
+
+type Wallet struct {
+	PrivateKey secp256k1.PrivKey `json:"-"`
+}
+
+type Balance struct {
+	Address string `json:"address"`
+	Balance int    `json:"balance"`
+}
 
 type SaveDeviceDocument struct {
 	Name          string `json:"name" validate:"required"`
@@ -37,8 +52,6 @@ type Device struct {
 	Documents        []DeviceDocument `json:"documents"`
 }
 
-type PhysicalAssetIdentifie struct {
-	SerialNumber string `json:"serial_number"`
-	Manufacturer string `json:"manufacturer"`
-	PartNumber   string `json:"part_number"`
+type SendNFT struct {
+	ReceiverArr string `json:"receiver"`
 }

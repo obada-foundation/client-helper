@@ -7,7 +7,7 @@ import (
 	"github.com/obada-foundation/client-helper/system/auth"
 )
 
-func (ds *Service) EncryptionSecret(ctx context.Context, DID string) ([]byte, error) {
+func (ds Service) EncryptionSecret(ctx context.Context, DID string) ([]byte, error) {
 	secretBytes := make([]byte, 32)
 
 	userID, err := auth.GetUserID(ctx)

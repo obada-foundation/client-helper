@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strings"
 
+	svcs "github.com/obada-foundation/client-helper/services"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/db"
 	"github.com/obada-foundation/client-helper/system/encoder"
@@ -17,6 +18,12 @@ import (
 	ipfssh "github.com/obada-foundation/client-helper/system/ipfs"
 	"github.com/obada-foundation/client-helper/system/validate"
 	"github.com/obada-foundation/sdkgo"
+)
+
+type DocumentType string
+
+const (
+	PhysicalAssetIdentifier DocumentType = "physical_asset_identifier"
 )
 
 const USNLength = 8
@@ -38,7 +45,7 @@ func NewService(v *validate.Validator, db db.DB, sdk *sdkgo.Sdk, ipfs *ipfssh.IP
 	}
 }
 
-func parentDocument(docName string, parentDocs []DeviceDocument) *DeviceDocument {
+func parentDocument(docName string, parentDocs []svcs.DeviceDocument) *svcs.DeviceDocument {
 	if len(parentDocs) == 0 {
 		return nil
 	}
@@ -52,9 +59,9 @@ func parentDocument(docName string, parentDocs []DeviceDocument) *DeviceDocument
 	return nil
 }
 
-func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, parentDocs []DeviceDocument, saveDocs bool) ([]DeviceDocument, error) {
+func (ds Service) handleDocuments(ctx context.Context, sd svcs.SaveDevice, parentDocs []svcs.DeviceDocument, saveDocs bool) ([]svcs.DeviceDocument, error) {
 	var (
-		documents []DeviceDocument
+		documents []svcs.DeviceDocument
 		secret    []byte
 		err       error
 	)
@@ -82,7 +89,10 @@ func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, parentDoc
 	// Special document type that cover a serial number
 	sd.Documents = append(
 		sd.Documents,
-		SaveDeviceDocument{Name: string(PhysicalAssetIdentifier), ShouldEncrypt: true},
+		svcs.SaveDeviceDocument{
+			Name:          string(PhysicalAssetIdentifier),
+			ShouldEncrypt: true,
+		},
 	)
 
 	for _, d := range sd.Documents {
@@ -131,7 +141,7 @@ func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, parentDoc
 			return documents, err
 		}
 
-		document := DeviceDocument{
+		document := svcs.DeviceDocument{
 			Name:      d.Name,
 			Hash:      hash,
 			URI:       fmt.Sprintf("ipfs://%s", cid),
@@ -144,10 +154,10 @@ func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, parentDoc
 	return documents, nil
 }
 
-func (ds *Service) Save(ctx context.Context, sd SaveDevice) (Device, error) {
+func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice) (svcs.Device, error) {
 	var (
-		device       Device
-		parentDevice Device
+		device       svcs.Device
+		parentDevice svcs.Device
 	)
 
 	userID, err := auth.GetUserID(ctx)
@@ -210,7 +220,7 @@ func (ds *Service) Save(ctx context.Context, sd SaveDevice) (Device, error) {
 }
 
 // Get
-func (ds *Service) Get(ctx context.Context, key string) (Device, error) {
+func (ds Service) Get(ctx context.Context, key string) (svcs.Device, error) {
 	if len(key) == USNLength {
 		return ds.GetByUSN(ctx, key)
 	}
@@ -218,8 +228,8 @@ func (ds *Service) Get(ctx context.Context, key string) (Device, error) {
 	return ds.GetByDID(ctx, key)
 }
 
-func (ds *Service) GetByDID(ctx context.Context, DID string) (Device, error) {
-	var d Device
+func (ds Service) GetByDID(ctx context.Context, DID string) (svcs.Device, error) {
+	var d svcs.Device
 
 	userID, err := auth.GetUserID(ctx)
 	if err != nil {
@@ -252,8 +262,8 @@ func (ds *Service) GetByDID(ctx context.Context, DID string) (Device, error) {
 	return d, nil
 }
 
-func (ds *Service) GetByUSN(ctx context.Context, USN string) (Device, error) {
-	var d Device
+func (ds Service) GetByUSN(ctx context.Context, USN string) (svcs.Device, error) {
+	var d svcs.Device
 
 	userID, err := auth.GetUserID(ctx)
 	if err != nil {

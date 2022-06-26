@@ -3,14 +3,15 @@ package device
 import (
 	"fmt"
 
+	svcs "github.com/obada-foundation/client-helper/services"
 	"github.com/obada-foundation/client-helper/utils"
 	"github.com/obada-foundation/sdkgo"
 	"github.com/obada-foundation/sdkgo/hash"
 )
 
-func newDevice(sdk *sdkgo.Sdk, sd SaveDevice, docs []DeviceDocument, pd *Device) (Device, error) {
+func newDevice(sdk *sdkgo.Sdk, sd svcs.SaveDevice, docs []svcs.DeviceDocument, pd *svcs.Device) (svcs.Device, error) {
 	var (
-		d        Device
+		d        svcs.Device
 		checksum hash.Hash
 	)
 
@@ -32,7 +33,7 @@ func newDevice(sdk *sdkgo.Sdk, sd SaveDevice, docs []DeviceDocument, pd *Device)
 
 	did := obit.GetObitID()
 
-	return Device{
+	return svcs.Device{
 		Usn:              did.GetUsn(),
 		DID:              did.GetDid(),
 		Checksum:         checksum.GetHash(),
@@ -58,7 +59,7 @@ func makeObitIDDto(sn, man, pn string) (sdkgo.ObitIDDto, error) {
 	}, nil
 }
 
-func makeSdkObit(sdk *sdkgo.Sdk, sd SaveDevice) (sdkgo.Obit, error) {
+func makeSdkObit(sdk *sdkgo.Sdk, sd svcs.SaveDevice) (sdkgo.Obit, error) {
 	var obit sdkgo.Obit
 
 	IDDto, err := makeObitIDDto(sd.SerialNumber, sd.Manufacturer, sd.PartNumber)

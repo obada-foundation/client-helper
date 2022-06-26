@@ -17,6 +17,7 @@ info:
 
 tags:
   - name: Accounts
+  - name: NFT
   - name: Obit
   - name: Utils
 
@@ -24,6 +25,7 @@ security:
   - bearerAuth: []
 
 paths:
+  
   /accounts/my-balance:
     get:
       summary: Shows account balance of OBADA address
@@ -39,6 +41,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
         "500":
            $ref: "#/components/responses/InternalServerError"
+           
   /accounts:
     post:
       summary: Creates a new Account
@@ -60,6 +63,7 @@ paths:
           $ref: "#/components/responses/UnprocessableEntity"
         "500":
            $ref: "#/components/responses/InternalServerError"
+           
   /obit/checksum:
     post:
       summary: Generates Obit checksum
@@ -149,54 +153,6 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /obits/{key}/to-chain:
-    get:
-      tags:
-        - Obit
-      summary: Uploads NFT to the blockchain
-      description: This operation actually executes NFT minting proccess
-      operationId: uploadToChain
-      parameters:
-        - name: key
-          in: path
-          description: The given ObitDID or USN argument
-          required: true
-          schema:
-            type: string
-            example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
-      responses:
-        "204":
-          description: NFT was uploaded to chain
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"
-
-          
-  /obits/{key}/from-chain:
-    get:
-      tags:
-        - Obit
-      summary: Download NFT from the blockchain
-      description: This operation downloads NFT from chain
-      operationId: downloadFromChain
-      parameters:
-        - name: key
-          in: path
-          description: The given ObitDID or USN argument
-          required: true
-          schema:
-            type: string
-            example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
-      responses:
-        "204":
-          description: NFT was uploaded to chain
-        "404":
-          $ref: "#/components/responses/NotFound"
-        "500":
-          $ref: "#/components/responses/InternalServerError"      
-      
-
   /obits/{key}:
     parameters:
       - name: key
@@ -241,6 +197,81 @@ paths:
           $ref: "#/components/responses/ObitHistoryResponse"
         "404":
           $ref: "#/components/responses/NotFound"
+          
+  /nft/{key}:
+    get:
+      tags:
+        - NFT
+      summary: Fetch NFT from OBADA blockchain Node
+      operationId: nft
+      parameters:
+        - name: key
+          in: path
+          description: The given ObitDID or USN argument
+          required: true
+          schema:
+            type: string
+            example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
+      responses:
+        "200":
+          description: NFT hosted by blockchain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NFT"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+          
+  /nft/{key}/mint:
+    post:
+      tags:
+        - NFT
+      summary: Mints NFT
+      operationId: Mint
+      parameters:
+        - name: key
+          in: path
+          description: The given ObitDID or USN argument
+          required: true
+          schema:
+            type: string
+            example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
+      responses:
+        "201":
+          description: Succesfully minted
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /nft/{key}/send:
+    post:
+      tags:
+        - NFT
+      summary: Send NFT to another address
+      operationId: send
+      parameters:
+        - name: key
+          in: path
+          description: The given ObitDID or USN argument
+          required: true
+          schema:
+            type: string
+            example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
+      requestBody:
+        content:
+          application/json:
+            schema:
+               $ref: '#/components/schemas/SendNFTRequest'
+      responses:
+        "204":
+          description: Succesfully transfered
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
 components:
   securitySchemes:
@@ -264,6 +295,10 @@ components:
       $ref: "definitions/Obit.yml#/ObitHistory"
     SaveObitRequest:
       $ref: "definitions/Obit.yml#/SaveObitRequest"
+    NFT:
+      $ref: "definitions/NFT.yml#/NFT"
+    SendNFTRequest:
+      $ref: "definitions/NFT.yml#/SendNFTRequest"
 
   responses:
     AccountBalance:

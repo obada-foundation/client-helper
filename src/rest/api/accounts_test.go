@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/obada-foundation/client-helper/services/account"
+	"github.com/obada-foundation/client-helper/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -71,7 +71,7 @@ func TestAccount_balance(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err = srv.AccountService.Create(ctx, account.NewAccount{
+	_, err = srv.AccountService.Create(ctx, services.NewAccount{
 		ID:    "3",
 		Email: "foo@bar.com",
 	})

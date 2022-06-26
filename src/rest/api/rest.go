@@ -16,6 +16,7 @@ import (
 	"github.com/obada-foundation/client-helper/services"
 	"github.com/obada-foundation/client-helper/services/account"
 	"github.com/obada-foundation/client-helper/services/device"
+	"github.com/obada-foundation/client-helper/services/nft"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/sdkgo"
 	"go.uber.org/zap"
@@ -28,19 +29,28 @@ type Rest struct {
 	Version string
 
 	ClientHelperURL string
-	Auth            *auth.Auth
-	AccountService  *account.Service
-	DeviceService   *device.Service
-	DB              *badger.DB
-	Logger          *zap.SugaredLogger
-	SSLConfig       SSLConfig
-	httpServer      *http.Server
-	httpsServer     *http.Server
-	lock            sync.Mutex
 
+	// Services
+	AccountService *account.Service
+	DeviceService  *device.Service
+	NFTService     *nft.Service
+
+	// System
+	Auth   *auth.Auth
+	DB     *badger.DB
+	Logger *zap.SugaredLogger
+
+	// Server
+	SSLConfig   SSLConfig
+	httpServer  *http.Server
+	httpsServer *http.Server
+	lock        sync.Mutex
+
+	// Route groups
 	pubRest     public
 	accountRest accountGroup
 	deviceRest  deviceGroup
+	nftRest     nftGroup
 }
 
 // Run the lister and request's router, activate rest server
@@ -93,7 +103,7 @@ func (s *Rest) routes() chi.Router {
 	router.Use(chimid.Throttle(1000), chimid.RealIP, mid.Recoverer(s.Logger))
 	router.Use(mid.AppInfo("Client Helper", "OBADA Foundation", s.Version), mid.Ping)
 
-	s.pubRest, s.accountRest, s.deviceRest = s.controllerGroups() // assign controllers for groups
+	s.pubRest, s.accountRest, s.deviceRest, s.nftRest = s.controllerGroups() // assign controllers for groups
 
 	// api routes
 	router.Route("/api/v1", func(rapi chi.Router) {
@@ -110,8 +120,12 @@ func (s *Rest) routes() chi.Router {
 				obits.Get("/{key}", s.deviceRest.get)
 				obits.Post("/", s.deviceRest.save)
 				obits.Get("/", s.pubRest.search)
-				obits.Get("/{key}/to-chain", s.pubRest.uploadToChain)
-				obits.Get("/{key}/from-chain", s.pubRest.downloadFromChain)
+			})
+
+			rauth.Route("/nft", func(nfts chi.Router) {
+				nfts.Post("/{key}/mint", s.nftRest.mint)
+				nfts.Post("/{key}/send", s.nftRest.transfer)
+				nfts.Get("/{key}", s.nftRest.nft)
 			})
 		})
 
@@ -124,15 +138,23 @@ func (s *Rest) routes() chi.Router {
 	return router
 }
 
-func (s *Rest) controllerGroups() (public, accountGroup, deviceGroup) {
+func (s *Rest) controllerGroups() (public, accountGroup, deviceGroup, nftGroup) {
 	deviceGrp := deviceGroup{
-		logger:    s.Logger,
-		deviceSvc: s.DeviceService,
+		logger:     s.Logger,
+		deviceSvc:  s.DeviceService,
+		accountSvc: s.AccountService,
 	}
 
 	accountGrp := accountGroup{
 		logger:     s.Logger,
 		accountSvc: s.AccountService,
+	}
+
+	nftGrp := nftGroup{
+		logger:     s.Logger,
+		accountSvc: s.AccountService,
+		deviceSvc:  s.DeviceService,
+		nftSvc:     s.NFTService,
 	}
 
 	sdk, _ := sdkgo.NewSdk(nil, false)
@@ -148,7 +170,7 @@ func (s *Rest) controllerGroups() (public, accountGroup, deviceGroup) {
 		walletService: walletSvc,
 	}
 
-	return publicGrp, accountGrp, deviceGrp
+	return publicGrp, accountGrp, deviceGrp, nftGrp
 }
 
 // Shutdown rest http server
