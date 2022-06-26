@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	svcs "github.com/obada-foundation/client-helper/services"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/db"
 	"github.com/obada-foundation/client-helper/system/ipfs"
@@ -45,7 +46,7 @@ func TestService(t *testing.T) {
 
 	t.Log("\tTesting Device Save")
 
-	device, err := service.Save(ctx, SaveDevice{
+	device, err := service.Save(ctx, svcs.SaveDevice{
 		SerialNumber: "SN123456",
 		Manufacturer: "IBM",
 		PartNumber:   "PN123456",
@@ -59,7 +60,7 @@ func TestService(t *testing.T) {
 
 	type deviceGetTest struct {
 		given string
-		want  Device
+		want  svcs.Device
 	}
 
 	deviceGetCases := []deviceGetTest{
@@ -83,13 +84,13 @@ func TestService(t *testing.T) {
 	t.Log("\tTesting Device Save validation")
 
 	type validationTest struct {
-		given SaveDevice
+		given svcs.SaveDevice
 		want  []validate.FieldError
 	}
 
 	validationTestCases := []validationTest{
 		{
-			given: SaveDevice{},
+			given: svcs.SaveDevice{},
 			want: []validate.FieldError{
 				{
 					Field: "serial_number",

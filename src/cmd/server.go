@@ -10,6 +10,7 @@ import (
 	"github.com/obada-foundation/client-helper/rest/api"
 	"github.com/obada-foundation/client-helper/services/account"
 	"github.com/obada-foundation/client-helper/services/device"
+	"github.com/obada-foundation/client-helper/services/nft"
 	"github.com/obada-foundation/client-helper/services/pubkey"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/ipfs"
@@ -118,8 +119,8 @@ func (s *ServerCommand) newServerApp() (*serverApp, error) {
 		return nil, err
 	}
 
-	// Account service manage OBADA wallets
-	accountSvc := account.NewService(validator, s.DB, &nodeClient)
+	// IPFS client init
+	ipfsShell := ipfs.NewIPFS(s.IPFS.RPC_URL)
 
 	// Device manager initialization
 	sdk, err := sdkgo.NewSdk(nil, false)
@@ -127,17 +128,18 @@ func (s *ServerCommand) newServerApp() (*serverApp, error) {
 		return nil, err
 	}
 
-	// IPFS shell intialization
-	ipfsShell := ipfs.NewIPFS(s.IPFS.RPC_URL)
-
-	deviceSvc := device.NewService(validator, s.DB, sdk, ipfsShell, &nodeClient)
+	deviceSvc := device.NewService(validator, s.DB, sdk, ipfsShell)
+	//--
 
 	srv := &api.Rest{
-		AccountService: accountSvc,
+		AccountService: account.NewService(validator, s.DB, &nodeClient),
 		DeviceService:  deviceSvc,
-		Logger:         s.Logger,
-		SSLConfig:      sslConfig,
-		Auth:           a,
+		NFTService:     nft.NewService(&nodeClient, s.Logger),
+
+		Logger: s.Logger,
+		Auth:   a,
+
+		SSLConfig: sslConfig,
 	}
 
 	return &serverApp{

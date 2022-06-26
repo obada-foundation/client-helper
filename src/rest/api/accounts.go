@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/render"
 	"github.com/obada-foundation/client-helper/rest"
+	"github.com/obada-foundation/client-helper/services"
 	"github.com/obada-foundation/client-helper/services/account"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"go.uber.org/zap"
@@ -16,7 +17,7 @@ type accountGroup struct {
 }
 
 func (agrp *accountGroup) create(w http.ResponseWriter, r *http.Request) {
-	var newAccount account.NewAccount
+	var newAccount services.NewAccount
 
 	userID, err := auth.GetUserID(r.Context())
 	if err != nil {

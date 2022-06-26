@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/google/uuid"
+	"github.com/obada-foundation/client-helper/services"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/db"
 	"github.com/obada-foundation/client-helper/system/obadanode"
@@ -43,7 +44,7 @@ func TestService(t *testing.T) {
 
 	t.Log("Testing Account creation")
 
-	na := NewAccount{
+	na := services.NewAccount{
 		ID:    uuid.New().String(),
 		Email: "jon.doe@supermail.com",
 	}
@@ -93,13 +94,13 @@ func TestService(t *testing.T) {
 	t.Log("Testing Account creation validation")
 
 	type validationTest struct {
-		given NewAccount
+		given services.NewAccount
 		want  []validate.FieldError
 	}
 
 	validationTestCases := []validationTest{
 		{
-			given: NewAccount{},
+			given: services.NewAccount{},
 			want: []validate.FieldError{
 				{
 					Field: "ID",
@@ -112,7 +113,7 @@ func TestService(t *testing.T) {
 			},
 		},
 		{
-			given: NewAccount{
+			given: services.NewAccount{
 				Email: "brokenemail",
 			},
 			want: []validate.FieldError{

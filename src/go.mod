@@ -11,10 +11,10 @@ require (
 	github.com/go-playground/universal-translator v0.17.0
 	github.com/go-playground/validator/v10 v10.6.1
 	github.com/golang-jwt/jwt/v4 v4.4.1
+	github.com/golang/protobuf v1.5.2
 	github.com/google/btree v1.0.0
 	github.com/google/uuid v1.2.0
 	github.com/ipfs/go-ipfs-api v0.3.0
-	github.com/ipfs/go-ipfs-files v0.0.9
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/obada-foundation/fullcore v0.0.0-00010101000000-000000000000
 	github.com/obada-foundation/sdkgo v0.1.0
@@ -58,7 +58,6 @@ require (
 	github.com/gogo/protobuf v1.3.3 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/flatbuffers v1.12.1 // indirect
 	github.com/gorilla/handlers v1.5.1 // indirect
@@ -75,6 +74,7 @@ require (
 	github.com/hdevalence/ed25519consensus v0.0.0-20210204194344-59a8610d2b87 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/ipfs/go-cid v0.0.7 // indirect
+	github.com/ipfs/go-ipfs-files v0.0.9 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d // indirect
 	github.com/klauspost/compress v1.12.3 // indirect

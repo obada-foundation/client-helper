@@ -56,7 +56,7 @@ func startupT(t *testing.T, srvHook ...func(srv *Rest)) (ts *httptest.Server, sr
 
 	ipfsShell := ipfs.NewIPFS("http://localhost:5001")
 
-	deviceSvc := device.NewService(validator, database, sdk, ipfsShell, &nodeClient)
+	deviceSvc := device.NewService(validator, database, sdk, ipfsShell)
 
 	ks, err := pubkey.NewFS("./testdata")
 	assert.NoError(t, err, "reading keys")

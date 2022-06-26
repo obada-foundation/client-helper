@@ -10,41 +10,42 @@ import (
 	"fmt"
 	"strings"
 
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	svcs "github.com/obada-foundation/client-helper/services"
 	"github.com/obada-foundation/client-helper/system/auth"
 	"github.com/obada-foundation/client-helper/system/db"
 	"github.com/obada-foundation/client-helper/system/encoder"
 	"github.com/obada-foundation/client-helper/system/filecrypt"
 	ipfssh "github.com/obada-foundation/client-helper/system/ipfs"
-	"github.com/obada-foundation/client-helper/system/obadanode"
 	"github.com/obada-foundation/client-helper/system/validate"
-	"github.com/obada-foundation/fullcore/x/obit/types"
 	"github.com/obada-foundation/sdkgo"
+)
+
+type DocumentType string
+
+const (
+	PhysicalAssetIdentifier DocumentType = "physical_asset_identifier"
 )
 
 const USNLength = 8
 
 type Service struct {
-	validator  *validate.Validator
-	db         db.DB
-	obadasdk   *sdkgo.Sdk
-	ipfs       *ipfssh.IPFS
-	nodeClient *obadanode.NodeClient
+	validator *validate.Validator
+	db        db.DB
+	obadasdk  *sdkgo.Sdk
+	ipfs      *ipfssh.IPFS
 }
 
-func NewService(v *validate.Validator, db db.DB, sdk *sdkgo.Sdk, ipfs *ipfssh.IPFS, nc *obadanode.NodeClient) *Service {
+func NewService(v *validate.Validator, db db.DB, sdk *sdkgo.Sdk, ipfs *ipfssh.IPFS) *Service {
 
 	return &Service{
-		validator:  v,
-		db:         db,
-		obadasdk:   sdk,
-		ipfs:       ipfs,
-		nodeClient: nc,
+		validator: v,
+		db:        db,
+		obadasdk:  sdk,
+		ipfs:      ipfs,
 	}
 }
 
-func parentDocument(docName string, parentDocs []DeviceDocument) *DeviceDocument {
+func parentDocument(docName string, parentDocs []svcs.DeviceDocument) *svcs.DeviceDocument {
 	if len(parentDocs) == 0 {
 		return nil
 	}
@@ -58,9 +59,9 @@ func parentDocument(docName string, parentDocs []DeviceDocument) *DeviceDocument
 	return nil
 }
 
-func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, parentDocs []DeviceDocument, saveDocs bool) ([]DeviceDocument, error) {
+func (ds Service) handleDocuments(ctx context.Context, sd svcs.SaveDevice, parentDocs []svcs.DeviceDocument, saveDocs bool) ([]svcs.DeviceDocument, error) {
 	var (
-		documents []DeviceDocument
+		documents []svcs.DeviceDocument
 		secret    []byte
 		err       error
 	)
@@ -88,7 +89,10 @@ func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, parentDoc
 	// Special document type that cover a serial number
 	sd.Documents = append(
 		sd.Documents,
-		SaveDeviceDocument{Name: string(PhysicalAssetIdentifier), ShouldEncrypt: true},
+		svcs.SaveDeviceDocument{
+			Name:          string(PhysicalAssetIdentifier),
+			ShouldEncrypt: true,
+		},
 	)
 
 	for _, d := range sd.Documents {
@@ -137,7 +141,7 @@ func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, parentDoc
 			return documents, err
 		}
 
-		document := DeviceDocument{
+		document := svcs.DeviceDocument{
 			Name:      d.Name,
 			Hash:      hash,
 			URI:       fmt.Sprintf("ipfs://%s", cid),
@@ -150,10 +154,10 @@ func (ds *Service) handleDocuments(ctx context.Context, sd SaveDevice, parentDoc
 	return documents, nil
 }
 
-func (ds *Service) Save(ctx context.Context, sd SaveDevice) (Device, error) {
+func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice) (svcs.Device, error) {
 	var (
-		device       Device
-		parentDevice Device
+		device       svcs.Device
+		parentDevice svcs.Device
 	)
 
 	userID, err := auth.GetUserID(ctx)
@@ -215,42 +219,8 @@ func (ds *Service) Save(ctx context.Context, sd SaveDevice) (Device, error) {
 	return device, nil
 }
 
-func (ds *Service) Mint(ctx context.Context, key string, priv cryptotypes.PrivKey) error {
-	var docs []types.NFTDocument
-
-	device, err := ds.Get(ctx, key)
-
-	if err != nil {
-		return err
-	}
-
-	accAddress := sdk.AccAddress(priv.PubKey().Address().Bytes()).String()
-
-	for _, d := range device.Documents {
-		docs = append(docs, types.NFTDocument{
-			Name: d.Name,
-			Uri:  d.URI,
-			Hash: d.Hash,
-		})
-	}
-
-	msg := &types.MsgMintObit{
-		Creator:          accAddress,
-		SerialNumberHash: device.SerialNumberHash,
-		Manufacturer:     device.Manufacturer,
-		PartNumber:       device.PartNumber,
-		Documents:        docs,
-	}
-
-	if _, err := ds.nodeClient.Mint(ctx, priv, msg); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // Get
-func (ds *Service) Get(ctx context.Context, key string) (Device, error) {
+func (ds Service) Get(ctx context.Context, key string) (svcs.Device, error) {
 	if len(key) == USNLength {
 		return ds.GetByUSN(ctx, key)
 	}
@@ -258,8 +228,8 @@ func (ds *Service) Get(ctx context.Context, key string) (Device, error) {
 	return ds.GetByDID(ctx, key)
 }
 
-func (ds *Service) GetByDID(ctx context.Context, DID string) (Device, error) {
-	var d Device
+func (ds Service) GetByDID(ctx context.Context, DID string) (svcs.Device, error) {
+	var d svcs.Device
 
 	userID, err := auth.GetUserID(ctx)
 	if err != nil {
@@ -292,8 +262,8 @@ func (ds *Service) GetByDID(ctx context.Context, DID string) (Device, error) {
 	return d, nil
 }
 
-func (ds *Service) GetByUSN(ctx context.Context, USN string) (Device, error) {
-	var d Device
+func (ds Service) GetByUSN(ctx context.Context, USN string) (svcs.Device, error) {
+	var d svcs.Device
 
 	userID, err := auth.GetUserID(ctx)
 	if err != nil {
