@@ -33,7 +33,7 @@ DeviceDocument:
     should_encrypt:
       type: boolean
       description: If true then client helper will encrypt document with account key
-      default: true
+      default: false
       
       
 SaveObitRequest:
