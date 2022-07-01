@@ -16,6 +16,8 @@ docker/build:
 openapi/python/clone: ## Clone github.com/obada-foundation/client-api-library-python if it does not exists
 	if [ ! -d "./client-api-library-python" ]; then git clone -b main $(GITHUB_CLONE)/client-api-library-python ./client-api-library-python; fi
 
+openapi/gen: openapi/python/gen openapi/csharp/gen openapi/node/gen openapi/go/gen openapi/php/gen
+
 openapi/python/gen: openapi/python/clone
 	rm -rf $$(pwd)/client-api-library-python/*
 	docker run --rm \
