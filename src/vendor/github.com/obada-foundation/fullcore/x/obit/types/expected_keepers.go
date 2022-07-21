@@ -7,6 +7,10 @@ import (
 )
 
 type NftKeeper interface {
+	Update(ctx sdk.Context, token nft.NFT) error
+
+	GetOwner(ctx sdk.Context, classID, nftID string) sdk.AccAddress
+
 	Mint(ctx sdk.Context, token nft.NFT, receiver sdk.AccAddress) error
 
 	Transfer(ctx sdk.Context, classID string, nftID string, receiver sdk.AccAddress) error

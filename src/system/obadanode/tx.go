@@ -6,14 +6,83 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	txs "github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
-func (c *NodeClient) SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey) (*ctypes.ResultBroadcastTx, error) {
+// BuildUnsignedTx builds a transaction to be signed given a set of messages.
+// Once created, the fee, memo, and messages are set.
+func (c NodeClient) BuildUnsignedTx(msgs ...sdk.Msg) (client.TxBuilder, error) {
+	tx := c.txConfig.NewTxBuilder()
+
+	if err := tx.SetMsgs(msgs...); err != nil {
+		return nil, err
+	}
+
+	return tx, nil
+}
+
+// getSimPK gets the public key to use for building a simulation tx.
+// Note, we should only check for keys in the keybase if we are in simulate and execute mode,
+// e.g. when using --gas=auto.
+// When using --dry-run, we are is simulation mode only and should not check the keybase.
+// Ref: https://github.com/cosmos/cosmos-sdk/issues/11283
+func (c NodeClient) getSimPK() cryptotypes.PubKey {
+	return &secp256k1.PubKey{}
+}
+
+// BuildSimTx creates an unsigned tx with an empty single signature and returns
+// the encoded transaction or an error if the unsigned transaction cannot be
+// built.
+func (c NodeClient) BuildSimTx(msgs ...sdk.Msg) ([]byte, error) {
+	tx, err := c.BuildUnsignedTx(msgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	pk := c.getSimPK()
+
+	// Create an empty signature literal as the ante handler will populate with a
+	// sentinel pubkey.
+	sig := signing.SignatureV2{
+		PubKey: pk,
+		Data: &signing.SingleSignatureData{
+			SignMode: c.txConfig.SignModeHandler().DefaultMode(),
+		},
+		Sequence: 0,
+	}
+	if err := tx.SetSignatures(sig); err != nil {
+		return nil, err
+	}
+
+	return c.txConfig.TxEncoder()(tx.GetTx())
+}
+
+// CalculateGas simulates the execution of a transaction and returns the
+// simulation response obtained by the query and the adjusted gas amount.
+func (c NodeClient) CalculateGas(ctx context.Context, msgs ...sdk.Msg,
+) (*txs.SimulateResponse, uint64, error) {
+	txBytes, err := c.BuildSimTx(msgs...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	simRes, err := c.serviceClient.Simulate(ctx, &txs.SimulateRequest{
+		TxBytes: txBytes,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return simRes, uint64(1 * float64(simRes.GasInfo.GasUsed)), nil
+}
+
+func (c NodeClient) SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey) (*ctypes.ResultBroadcastTx, error) {
 	accAddress := sdk.AccAddress(priv.PubKey().Address().Bytes()).String()
 	nonce, err := c.Nonce(ctx, accAddress)
 	if err != nil {
@@ -31,11 +100,16 @@ func (c *NodeClient) SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.P
 	}
 
 	res, err := c.clientHTTP.BroadcastTxSync(ctx, txBytes)
+
+	if err != nil {
+		return nil, err
+	}
 	// Note: In async case, response is returnd before TxCheck
 	// res, err := c.clientHTTP.BroadcastTxAsync(ctx, txBytes)
 	if errRes := client.CheckTendermintError(err, txBytes); errRes != nil {
-		return nil, err
+		return nil, fmt.Errorf("code: %d, log: %s, codespace: %s\n", errRes.Code, errRes.Logs, res.Codespace)
 	}
+
 	if res.Code != 0 {
 		return nil, fmt.Errorf("code: %d, log: %s, codespace: %s\n", res.Code, res.Log, res.Codespace)
 	}
@@ -43,14 +117,16 @@ func (c *NodeClient) SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.P
 	return res, nil
 }
 
-func (c *NodeClient) BuildTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey, accSeq uint64) (authsigning.Tx, error) {
+func (c NodeClient) BuildTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey, accSeq uint64) (authsigning.Tx, error) {
 	txBuilder := c.txConfig.NewTxBuilder()
+	txBuilder.GetTx().GetFee()
 
 	err := txBuilder.SetMsgs(msg)
 	if err != nil {
 		return nil, err
 	}
 	txBuilder.SetGasLimit(uint64(200000))
+	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("obd", sdk.NewInt(1))))
 
 	// First round: we gather all the signer infos. We use the "set empty signature" hack to do that.
 	if err = txBuilder.SetSignatures(signing.SignatureV2{

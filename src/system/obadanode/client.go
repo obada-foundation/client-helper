@@ -4,6 +4,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/simapp"
+	"github.com/cosmos/cosmos-sdk/types/tx"
 	txtypes "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -15,10 +16,11 @@ import (
 type NodeClient struct {
 	conn *grpc.ClientConn
 
-	clientHTTP  *rpchttp.HTTP
-	authClient  authtypes.QueryClient
-	bankClient  banktypes.QueryClient
-	obadaClient obadatypes.QueryClient
+	clientHTTP    *rpchttp.HTTP
+	authClient    authtypes.QueryClient
+	bankClient    banktypes.QueryClient
+	obadaClient   obadatypes.QueryClient
+	serviceClient tx.ServiceClient
 
 	cdc      *codec.ProtoCodec
 	txConfig client.TxConfig
@@ -42,6 +44,7 @@ func NewClient(chainID, rpcURI, grpcURI string) (NodeClient, error) {
 		return c, err
 	}
 
+	c.serviceClient = tx.NewServiceClient(c.conn)
 	c.authClient = authtypes.NewQueryClient(c.conn)
 	c.bankClient = banktypes.NewQueryClient(c.conn)
 	c.obadaClient = obadatypes.NewQueryClient(c.conn)

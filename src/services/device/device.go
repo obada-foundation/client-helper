@@ -91,7 +91,7 @@ func (ds Service) handleDocuments(ctx context.Context, sd svcs.SaveDevice, paren
 		sd.Documents,
 		svcs.SaveDeviceDocument{
 			Name:          string(PhysicalAssetIdentifier),
-			ShouldEncrypt: true,
+			ShouldEncrypt: false,
 		},
 	)
 

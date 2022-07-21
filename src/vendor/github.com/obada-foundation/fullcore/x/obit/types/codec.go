@@ -10,6 +10,7 @@ import (
 
 func RegisterCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgMintObit{}, "obit/MintObit", nil)
+	cdc.RegisterConcrete(&MsgEditMetadata{}, "obit/MsgEditMetadata", nil)
 	cdc.RegisterConcrete(&MsgSend{}, "obit/MsgSend", nil)
 	cdc.RegisterConcrete(&MsgCreateTa{}, "obit/CreateTa", nil)
 	cdc.RegisterConcrete(&MsgUpdateTa{}, "obit/UpdateTa", nil)
@@ -21,6 +22,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterInterface("obadafoundation.fullcore.obit.NFTData", (*proto.Message)(nil), &NFTData{})
 	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&MsgMintObit{},
+		&MsgEditMetadata{},
 		&MsgSend{},
 		&MsgCreateTa{},
 		&MsgUpdateTa{},

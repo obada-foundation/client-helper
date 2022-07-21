@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	TypeMsgMintObit = "mint_obit"
-	TypeMsgSend     = "send_obit"
+	TypeMsgMintObit     = "mint_obit"
+	TypeMsgSend         = "send_obit"
+	TypeMsgEditMetadata = "edit_metadata"
 )
 
 var _ sdk.Msg = &MsgMintObit{}
@@ -51,6 +52,41 @@ func (msg *MsgMintObit) ValidateBasic() error {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
 	}
 	return nil
+}
+
+var _ sdk.Msg = &MsgEditMetadata{}
+
+func NewMsgEditMetadata(DID, editor string, metadata NFTData) *MsgEditMetadata {
+	return &MsgEditMetadata{
+		Did:     DID,
+		Editor:  editor,
+		NFTData: &metadata,
+	}
+}
+
+func (msg *MsgEditMetadata) ValidateBasic() error {
+	_, err := sdk.AccAddressFromBech32(msg.Editor)
+	if err != nil {
+		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid editor address (%s)", err)
+	}
+
+	return nil
+}
+
+func (msg *MsgEditMetadata) GetSigners() []sdk.AccAddress {
+	editor, err := sdk.AccAddressFromBech32(msg.Editor)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{editor}
+}
+
+func (msg *MsgEditMetadata) Route() string {
+	return RouterKey
+}
+
+func (msg *MsgEditMetadata) Type() string {
+	return TypeMsgEditMetadata
 }
 
 var _ sdk.Msg = &MsgSend{}
