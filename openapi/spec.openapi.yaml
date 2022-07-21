@@ -246,6 +246,28 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /nft/{key}/metadata:
+    post:
+      tags:
+        - NFT
+      summary: Update NFT metadata
+      operationId: UpdateMetadata
+      parameters:
+        - name: key
+          in: path
+          description: The given ObitDID or USN argument
+          required: true
+          schema:
+            type: string
+            example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
+      responses:
+        "200":
+          description: Metadata succesfully updated
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /nft/{key}/send:
     post:
       tags:

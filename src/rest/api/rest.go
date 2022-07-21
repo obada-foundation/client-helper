@@ -22,7 +22,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const hardBodyLimit = 1024 * 64 // limit size of body
+const hardBodyLimit = (1024 * 64) * 1024 // limit size of body
 
 // Rest is a rest access server
 type Rest struct {
@@ -88,8 +88,8 @@ func (s *Rest) makeHTTPServer(address string, port int, router http.Handler) *ht
 		Addr:              fmt.Sprintf("%s:%d", address, port),
 		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
-		// WriteTimeout:      120 * time.Second, // TODO: such a long timeout needed for blocking export (backup) request
-		IdleTimeout: 30 * time.Second,
+		WriteTimeout:      5 * time.Second,
+		IdleTimeout:       30 * time.Second,
 	}
 }
 
@@ -123,7 +123,9 @@ func (s *Rest) routes() chi.Router {
 			})
 
 			rauth.Route("/nft", func(nfts chi.Router) {
+				nfts.Post("/{key}/mint/gas", s.nftRest.mintGasEstimate)
 				nfts.Post("/{key}/mint", s.nftRest.mint)
+				nfts.Post("/{key}/metadata", s.nftRest.updateMetadata)
 				nfts.Post("/{key}/send", s.nftRest.transfer)
 				nfts.Get("/{key}", s.nftRest.nft)
 			})

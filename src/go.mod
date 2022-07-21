@@ -16,12 +16,12 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/ipfs/go-ipfs-api v0.3.0
 	github.com/jessevdk/go-flags v1.5.0
-	github.com/obada-foundation/fullcore v0.0.0-00010101000000-000000000000
+	github.com/obada-foundation/fullcore v0.0.0-20220720100316-b0f62f357db8
 	github.com/obada-foundation/sdkgo v0.1.0
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.34.14
 	go.uber.org/zap v1.17.0
-	google.golang.org/grpc v1.43.0
+	google.golang.org/grpc v1.48.0
 )
 
 require (
@@ -133,18 +133,18 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
-	golang.org/x/net v0.0.0-20210903162142-ad29c8ab022f // indirect
-	golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359 // indirect
-	golang.org/x/term v0.0.0-20201210144234-2321bbc49cbf // indirect
-	golang.org/x/text v0.3.6 // indirect
-	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5 // indirect
-	google.golang.org/protobuf v1.27.1 // indirect
+	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e // indirect
+	golang.org/x/sys v0.0.0-20220610221304-9f5ed59c137d // indirect
+	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
+	golang.org/x/text v0.3.7 // indirect
+	google.golang.org/genproto v0.0.0-20220719170305-83ca9fad585f // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/ini.v1 v1.63.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace (
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-	github.com/obada-foundation/fullcore => github.com/obada-foundation/fullcore/src v0.0.0-20220315091208-c58291cc9ad1
+	github.com/obada-foundation/fullcore => github.com/obada-foundation/fullcore/src v0.0.0-20220720100316-b0f62f357db8
 )
