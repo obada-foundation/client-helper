@@ -29,15 +29,15 @@ func TestService(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	tests := tests{
+	ts := tests{
 		service: service,
 		ctx:     ctx,
 	}
 
-	t.Run("testSend", tests.testSend)
-	t.Run("testMintNFT", tests.testMintNFT)
-	t.Run("testTransferNFT", tests.testTransferNFT)
-	t.Run("testGetNFTByAddress", tests.testGetNFTByAddress)
+	t.Run("testSend", ts.testSend)
+	t.Run("testMintNFT", ts.testMintNFT)
+	t.Run("testTransferNFT", ts.testTransferNFT)
+	t.Run("testGetNFTByAddress", ts.testGetNFTByAddress)
 }
 
 func (ts tests) testSend(t *testing.T) {
