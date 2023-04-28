@@ -1,0 +1,46 @@
+SendNFTRequest:
+  description: Transfer NFT payload
+  type: object
+  required:
+    - receiver
+  properties:
+    receiver:
+      type: string
+      description: OBADA blockchain receiver address
+
+NFT:
+  description: OBADA NFT
+  type: object
+  properties:
+    class_id:
+      type: string
+    id:
+      type: string
+    uri:
+      type: string
+    uri_hash:
+      type: string
+    data:
+      type: object
+      properties:
+          trust_anchor_token:
+            type: string
+          usn:
+            type: string
+          checksum:
+            type: string
+          documents:
+            type: array
+            items:
+              $ref: "#/NFTDocument"
+
+NFTDocument:
+  description: OBADA NFT document
+  type: object
+  properties:
+    name:
+      type: string
+    uri:
+      type: string
+    hash:
+      type: string  

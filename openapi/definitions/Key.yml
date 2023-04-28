@@ -1,0 +1,48 @@
+MnemonicRequest:
+  description: Mnemonic for seeding/importing new master key
+  type: object
+  required:
+    - mnemonic
+  properties:
+    mnemonic:
+      type: string
+      description: Mnemonic for seeding/importing
+      example: "fantasy route flavor zoo laptop rent knife stick fancy flame black fan oval stairs express identify crane truly anxiety wave notable gather toe tag"
+  
+AllMasterKeys:
+  description: "Returns all master keys per account"
+  type: array
+  items:
+    $ref: "#/MasterKey"
+
+MasterKey:
+  description: "Master key"
+  type: object
+  properties:
+    kid:
+      type: string
+      description: "Master key ID"
+    master_pub_key:
+      type: string
+      description: "Public master key"
+    pub_keys:
+      type: array
+      items:
+        $ref: "#/PubKey"
+        
+PubKey:
+  description: "Public key"
+  type: object
+  properties:
+    pub_key:
+      type: string
+      description: "Public key"
+    address:
+      type: string
+      description: "OBADA address"
+    balance:
+      type: integer
+      format: int64
+    nft_count:
+      type: integer
+      format: int64

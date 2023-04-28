@@ -1,0 +1,668 @@
+openapi: 3.0.2
+
+servers:
+  - description: OBADA Production API
+    url: http://obs.node.obada.io
+  - description: OBADA Staging API
+    url: https://dev.node.obada.io
+
+info:
+  version: "0.0.1"
+  title: OBADA API
+  termsOfService: 'https://www.obada.io/terms/'
+  contact:
+    name: Obada Dev Team
+    email: techops@obada.io
+    url: 'https://www.obada.io'
+
+tags:
+  - name: Accounts
+  - name: NFT
+  - name: Keys
+  - name: Obit
+  - name: Utils
+
+security:
+  - bearerAuth: []
+
+paths:
+  /accounts/{address}:
+    parameters:
+        - name: address
+          in: path
+          description: OBADA address
+          required: true
+          schema:
+            type: string
+            example: "obada1yxxnd624tgwqm3eyv5smdvjrrydfh9h943qptg"
+
+    delete:
+      summary: Delete imported account
+      operationId: deleteImportedAccount
+      tags:
+        - Accounts
+      responses:
+        "204":
+          description: Account was deleted
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
+            
+    post:
+      summary: Sets account specific information
+      operationId: updateAccount
+      tags:
+        - Accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountRequest"
+      responses:
+        "204":
+          description: Account was updated
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
+      
+    get:
+      summary: Fetches an information about single account
+      operationId: account
+      tags:
+        - Accounts
+      responses:
+        "200":
+          $ref: "#/components/responses/Account"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
+
+  /accounts/{address}/send-coins:
+    post:
+      summary: Send coins from selected account
+      operationId: sendCoins
+      parameters:
+        - name: address
+          in: path
+          description: OBADA address
+          required: true
+          schema:
+            type: string
+            example: "obada1yxxnd624tgwqm3eyv5smdvjrrydfh9h943qptg"
+      tags:
+        - Accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendCoinsRequest"
+      responses:
+        "201":
+          description: Coins were sent
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
+      
+  /accounts/new-account:
+    post:
+      summary: Creates a new OBADA account from HD wallet master key
+      operationId: newAccount
+      tags:
+        - Accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountRequest"
+      responses:
+        "201":
+          description: Account was created
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
+      
+  /accounts/new-wallet:
+    post:
+      summary: Creates profile HD wallet
+      operationId: newWallet
+      tags:
+        - Accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MnemonicRequest"
+      responses:
+        "201":
+          description: HD wallet was created
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
+
+  /accounts/mnemonic:
+    get:
+      summary: Fetching an existing mnemonic phrase
+      operationId: getMnemonic
+      tags:
+        - Accounts
+      responses:
+        "200":
+          $ref: "#/components/responses/NewMnemonic"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "500":
+           $ref: "#/components/responses/InternalServerError"    
+      
+  /accounts/new-mnemonic:
+    get:
+      summary: Generate a new mnemonic phrase for seeding wallet
+      operationId: newMnemonic
+      tags:
+        - Accounts
+      responses:
+        "200":
+          $ref: "#/components/responses/NewMnemonic"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
+
+  /accounts:
+    get:
+      summary: Returns a list of OBADA accounts
+      operationId: accounts
+      tags:
+        - Accounts
+      responses:
+        "200":
+          $ref: "#/components/responses/AccountsResponse"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
+
+  /accounts/export-account:
+    post:
+      summary: "Export OBADA account (private key) from client-helper"
+      operationId: exportAccount
+      tags:
+        - Accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportAccountRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/ExportAccountResponse"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "409":
+          $ref: "#/components/responses/WalletExistsError"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /accounts/import-account:
+    post:
+      summary: "Imports an existing OBADA account (private key) to the client-helper user profile"
+      operationId: importAccount
+      tags:
+        - Accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportAccountRequest"
+      responses:
+        "201":
+          description: Account was imported
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "409":
+          $ref: "#/components/responses/WalletExistsError"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
+           
+  /accounts/import-wallet:
+    post:
+      summary: "Imports an existing HD wallet to the client-helper user profile"
+      operationId: importWallet
+      tags:
+        - Accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MnemonicRequest"
+      responses:
+        "201":
+          description: HD wallet was imported
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "409":
+          $ref: "#/components/responses/WalletExistsError"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
+      
+  /accounts/register:
+    post:
+      summary: Register a new client-helper user profile
+      description: "Creates a new profile, using JWT uid as a internal user id"
+      operationId: register
+      tags:
+        - Accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          $ref: "#/components/responses/NewProfileResponse"
+        "401":
+          $ref: "#/components/responses/NotAuthorized"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+           $ref: "#/components/responses/InternalServerError"
+           
+  /obit/checksum:
+    post:
+      summary: Generates Obit checksum
+      description: 'Generates Obit checksum and provides a log of generation details'
+      operationId: generateChecksum
+      tags:
+        - Utils
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateObitChecksumRequest'
+      responses:
+        "200":
+          $ref: '#/components/responses/GenerateObitChecksumResponse'
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /obit/did:
+    post:
+      summary: Generate Obit DID
+      description: 'Returns the Obit DID for a given device_id, part_number and serial_number input.'
+      operationId: generateDID
+      tags:
+        - Utils
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateObitDIDRequest'
+      responses:
+        "200":
+          $ref: "#/components/responses/GenerateObitDIDResponse"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /obits:
+    post:
+      summary: Save Obit
+      description: 'Returns Obit with updated checksum if data was changed.'
+      operationId: save
+      tags:
+        - Obit
+      requestBody:
+        content:
+          application/json::
+            schema:
+              $ref: '#/components/schemas/SaveObitRequest'
+      responses:
+        "200":
+          $ref: "#/components/responses/Obit"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    get:
+      tags:
+        - Obit
+      summary: Search obits by query
+      description: Implements a fulltext search for obits by "searchTerm".
+      operationId: search
+      parameters:
+        - name: q
+          description: Query argument that used for a fulltext search
+          in: query
+          schema:
+            type: string
+            example: "fe403a1afe16203f4b8bb3a0e72d3e17567897bc15293e4a87b663e441030aea"
+        - name: offset
+          in: query
+          description: Number of records to skip for pagination.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: List of obits with pagination responded by given arguments.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Obits"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /obits/{key}:
+    parameters:
+      - name: key
+        in: path
+        description: The given ObitDID or USN argument
+        required: true
+        schema:
+          type: string
+          example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
+
+    get:
+      tags:
+        - Obit
+      summary: Get Obit by DID or USN
+      description: Get a single Obit by given ObitDID or USN
+      operationId: get
+      responses:
+        "200":
+          $ref: "#/components/responses/Obit"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /obits/{key}/history:
+    get:
+      tags:
+        - Obit
+      summary: Get Obit history by DID or USN
+      description: Shows the history of changes by given Obit with ObitDID or USN
+      operationId: history
+      parameters:
+        - name: key
+          in: path
+          description: The given ObitDID or USN argument
+          required: true
+          schema:
+            type: string
+            example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
+      responses:
+        "200":
+          $ref: "#/components/responses/ObitHistoryResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+          
+  /nft/{key}:
+    get:
+      tags:
+        - NFT
+      summary: Fetch NFT from OBADA blockchain Node
+      operationId: nft
+      parameters:
+        - name: key
+          in: path
+          description: The given ObitDID or USN argument
+          required: true
+          schema:
+            type: string
+            example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
+      responses:
+        "200":
+          description: NFT hosted by blockchain
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NFT"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+          
+  /nft/{key}/mint:
+    post:
+      tags:
+        - NFT
+      summary: Mints NFT
+      operationId: Mint
+      parameters:
+        - name: key
+          in: path
+          description: The given ObitDID or USN argument
+          required: true
+          schema:
+            type: string
+            example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
+      responses:
+        "201":
+          description: Succesfully minted
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /nft/{key}/metadata:
+    post:
+      tags:
+        - NFT
+      summary: Update NFT metadata
+      operationId: UpdateMetadata
+      parameters:
+        - name: key
+          in: path
+          description: The given ObitDID or USN argument
+          required: true
+          schema:
+            type: string
+            example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
+      responses:
+        "200":
+          description: Metadata succesfully updated
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /nft/{key}/send:
+    post:
+      tags:
+        - NFT
+      summary: Send NFT to another address
+      operationId: send
+      parameters:
+        - name: key
+          in: path
+          description: The given ObitDID or USN argument
+          required: true
+          schema:
+            type: string
+            example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
+      requestBody:
+        content:
+          application/json:
+            schema:
+               $ref: '#/components/schemas/SendNFTRequest'
+      responses:
+        "204":
+          description: Succesfully transfered
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  securitySchemes:
+    bearerAuth:            # arbitrary name for the security scheme
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      
+  schemas:
+    SendCoinsRequest:
+      $ref: "definitions/Account.yml#/SendCoinsRequest"
+    ExportAccountRequest:
+      $ref: "definitions/Account.yml#/ExportAccountRequest"
+    AccountRequest:
+      $ref: "definitions/Account.yml#/AccountRequest"
+    ImportAccountRequest:
+      $ref: "definitions/Account.yml#/ImportAccountRequest"
+    MnemonicRequest:
+      $ref: "definitions/Account.yml#/NewMnemonic"
+    RegisterRequest:
+      $ref: "definitions/Account.yml#/RegisterRequest"
+    GenerateObitDIDRequest:
+      $ref: "definitions/Utils.yml#/GenerateObitDIDRequest"
+    GenerateObitChecksumRequest:
+       $ref: "definitions/Utils.yml#/GenerateObitChecksumRequest"
+    Obits:
+      $ref: "definitions/Obit.yml#/Obits"
+    Obit:
+      $ref: "definitions/Obit.yml#/Obit"
+    ObitHistory:
+      $ref: "definitions/Obit.yml#/ObitHistory"
+    SaveObitRequest:
+      $ref: "definitions/Obit.yml#/SaveObitRequest"
+    NFT:
+      $ref: "definitions/NFT.yml#/NFT"
+    SendNFTRequest:
+      $ref: "definitions/NFT.yml#/SendNFTRequest"
+
+  responses:
+    Account:
+      description: "Returns OBADA account"
+      content:
+        application/json:
+          schema:
+           $ref: "definitions/Account.yml#/Account"
+
+    ExportAccountResponse:
+      description: "Single OBADA account (private key) encrypted with password"
+      content:
+        application/json:
+          schema:
+           $ref: "definitions/Account.yml#/ExportAccountResponse"
+      
+    AccountsResponse:
+      description: "Returns all OBADA accounts associated with client-helper profile"
+      content:
+        application/json:
+          schema:
+           $ref: "definitions/Account.yml#/Accounts"
+  
+    NewMnemonic:
+      description: "New mnemonic phrase for wallet seeding"
+      content:
+        application/json:
+          schema:
+            $ref: "definitions/Account.yml#/NewMnemonic"
+      
+    AccountBalance:
+      description: "Account balance response"
+      content:
+        application/json:
+          schema:
+            $ref: "definitions/Account.yml#/AccountBalance"
+            
+    NewProfileResponse:
+      description: "Created profile response"
+      content:
+        application/json:
+          schema:
+            $ref: "definitions/Account.yml#/Profile"
+      
+    Obit:
+      description: ""
+      content:
+        application/json:
+          schema:
+            $ref: "definitions/Obit.yml#/Obit"
+      
+    GenerateObitChecksumResponse:
+      description: Obit checksum response
+      content:
+        application/json:
+          schema:
+            $ref: "definitions/Utils.yml#/GenerateObitChecksumResponse"
+      
+    GenerateObitDIDResponse:
+      description: Obit DID response
+      content:
+        application/json:
+          schema:
+            $ref: "definitions/Utils.yml#/GenerateObitDIDResponse"
+
+    ObitHistoryResponse:
+      description: Collection of historical changes for given obit
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ObitHistory"
+
+    InternalServerError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: "Errors.yml#/InternalServerError"
+
+    NotFound:
+      description: The requested resource could not be found.
+      content:
+        application/json:
+          schema:
+            $ref: "Errors.yml#/NotFound"
+
+    NotAuthorized:
+      description: The request is not authorized.
+      content:
+        application/json:
+          schema:
+            $ref: "Errors.yml#/NotAuthorized"
+
+    WalletExistsError:
+      description: ""
+      content:
+        application/json:
+          schema:
+            $ref: "Errors.yml#/WalletExistsError"
+            
+    UnprocessableEntity:
+      description: The submitted entity could not be processed.
+      content:
+        application/json:
+          schema:
+            $ref: "Errors.yml#/UnprocessableEntity"

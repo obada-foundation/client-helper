@@ -1,0 +1,158 @@
+Document:
+  description: Document hashlink
+  type: object
+  properties:
+    name:
+      type: string
+      description: Associative name of file
+      example: "Link to device wipe report"
+    uri:
+      type: string
+      description: Link to the document
+    hash:
+      type: string
+      description: Hash of the file
+    encrypted:
+      type: boolean
+      description: If true then client helper will encrypt document with account key
+    
+DeviceDocument:
+  description: Device Document
+  type: object
+  required:
+    - name
+    - document_file
+  properties:
+    name:
+      type: string
+      description: Associative name of device document
+      example: "Link to device wipe report"
+    document_file:
+      type: string
+      format: base64
+    should_encrypt:
+      type: boolean
+      description: If true then client helper will encrypt document with account key
+      default: false
+      
+      
+SaveObitRequest:
+  description: Request to save Obit
+  type: object
+  required:
+    - manufacturer
+    - part_number
+    - serial_number
+  properties:
+    manufacturer:
+      type: string
+      description: "Waiting more specific details from Rohi"
+      example: "Sony"
+    part_number:
+      type: string
+      description: "Manufacturer provided. In cases where no part number is provided for the product, use model, or the most specific ID available from the manufacturer. MWCN2LL/A (an iPhone 11 Pro, Silver, 256GB, model A2160)"
+      example: "MWCN2LL/A"
+    serial_number:
+      type: string
+      description: Serial number hashed with sha256 hash function
+      example: "f6fc84c9f21c24907d6bee6eec38cabab5fa9a7be8c4a7827fe9e56f245bd2d5"
+    documents:
+      type: array
+      items:
+        $ref: "#/DeviceDocument"
+    address:
+      type: string
+
+Obit:
+  description: OBADA record.
+  type: object
+  required:
+    - manufacturer
+    - part_number
+    - serial_number
+  properties:
+    did:
+      type: string
+      description: OBADA decentralized identifier
+      example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
+    usn:
+      type: string
+      description: >
+        Test An 8-12 character “URL Shortened” obit. Create the USN by
+        Base(58) encoding the OBIT ID. Take the first 8 characters.
+        Check for duplicates. With 16 million OBITs there is a 40% chance of collision. If so, add 4 characters. Repeat as necessary until a unique USN is generated.
+      example: "2zEz-xLJR"
+    owner:
+      type: string
+      description: Owner is the person/entity that owns the obit and the physical asset it represents. Format is a DID like did:obada:owner:1234. However in the current version only test numbers will be used.
+      example: "did:obada:owner:123456"
+    manufacturer:
+      type: string
+      description: "Waiting more specific details from Rohi"
+      example: "Sony"
+    part_number:
+      type: string
+      description: "Manufacturer provided. In cases where no part number is provided for the product, use model, or the most specific ID available from the manufacturer. MWCN2LL/A (an iPhone 11 Pro, Silver, 256GB, model A2160)"
+      example: "MWCN2LL/A"
+    serial_number_hash:
+      type: string
+      description: Serial number hashed with sha256 hash function
+      example: "f6fc84c9f21c24907d6bee6eec38cabab5fa9a7be8c4a7827fe9e56f245bd2d5"
+    trust_anchor_token:
+      description: "JWT token from the trust anchor"
+      type: string
+    documents:
+      description: "Documents that are attached to Obit"
+      type: array
+      items:
+        $ref: '#/Document'
+    checksum:
+      description: >
+        Hash calculated by SHA256 (previous Obit checksum + Obit data).
+      type: string
+
+Obits:
+  description: Obits search response
+  type: object
+  properties:
+    data:
+      type: array
+      items:
+        $ref: '#/Obit'
+    meta:
+      type: object
+      properties:
+        total:
+          type: integer
+        per_page:
+          type: integer
+        current_page:
+          type: integer
+        last_page:
+          type: integer
+
+ObitHistory:
+  description: New Obit request payload.
+  type: object
+  properties:
+    obit_did:
+      type: string
+      maxLength: 256
+      description: OBADA decentralized identifier (max length Rohi?)
+      example: "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5"
+    event:
+      type: string
+      description: "History event"
+      example: "created"
+    old_values:
+      type: object
+    new_values:
+      type: object
+    created_at:
+      type: string
+      format: date-time
+      example: "2020-01-01T13:24:35Z"
+    updated_at:
+      type: string
+      format: date-time
+      example: "2020-01-01T13:24:35Z"

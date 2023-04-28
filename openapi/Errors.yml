@@ -1,0 +1,52 @@
+NotFound:
+  description: A typical 404 error.
+  type: object
+  properties:
+    error:
+      type: string
+      default: Not found
+
+NotAuthorized:
+  description: A typical 401 error.
+  type: object
+  properties:
+    error:
+      type: string
+      default: Not authorized
+
+InternalServerError:
+  description: A typical 500 error.
+  type: object
+  properties:
+    error:
+      type: string
+      default: Internal Server Error
+
+WalletExistsError:
+  description: Returns when trying to create or import HD wallet into setteld user profile.
+  type: object
+  properties:
+    error:
+      type: string
+      default: profile wallet already exist
+
+UnprocessableEntity:
+  description: A typical 422 error.
+  type: object
+  properties:
+    error:
+      type: string
+      default: data validation error
+    fields:
+      type: array
+      items:
+        type: object
+        properties:
+          field:
+            type: string
+            default: serial_number
+          error:
+            type: string
+            default: serial_number is required field
+
+

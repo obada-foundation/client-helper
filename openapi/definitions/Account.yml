@@ -1,0 +1,152 @@
+Accounts:
+  type: object
+  properties:
+    hd_accounts:
+      type: array
+      items:
+        $ref: "#/Account"
+    imported_accounts:
+      type: array
+      items:
+        $ref: "#/Account"
+        
+Account:
+  description: "OBADA account"
+  type: object
+  properties:
+    name:
+      type: string
+      description: "Account address associated name"
+      example: "My test account" 
+    pub_key:
+      type: string
+      description: "Public key"
+    address:
+      type: string
+      description: "OBADA address"
+    balance:
+      type: object
+      properties:
+        denom:
+          type: string
+          description: "Denomination unit"
+        amount:
+          type: string
+    nft_count:
+      type: integer
+      format: int64
+
+AccountRequest:
+  description: Set account specific data
+  type: object
+  properties:
+    account_name:
+      type: string
+      description: Associative account name
+      example: "My test account" 
+
+SendCoinsRequest:
+  description: Sending tokens payload
+  type: object
+  required:
+    - recepient_address
+    - amount
+    - denom
+  properties:
+    recepient_address:
+      type: string
+    amount:
+      type: string
+    denom:
+      type: string
+
+ExportAccountRequest:
+  description: OBADA account export payload
+  type: object
+  required:
+    - private_key
+  properties:
+    address:
+      type: string
+      description: OBADA account
+    passphrase:
+      type: string
+      description: Passphrase to decrypt the account
+
+ExportAccountResponse:
+  description: OBADA account export response
+  type: object
+  properties:
+    private_key:
+      type: string
+      description: OBADA account
+
+ImportAccountRequest:
+  description: OBADA account import payload
+  type: object
+  required:
+    - private_key
+  properties:
+    private_key:
+      type: string
+      description: OBADA account
+    account_name:
+      type: string
+      description: Associative account name
+      example: "My test account" 
+      
+
+NewMnemonic:
+  description: Mnemonic for seeding the wallet response
+  type: object
+  required:
+    - mnemonic
+  properties:
+    mnemonic:
+      type: string
+      description: Mnemonic for seeding
+      example: "fantasy route flavor zoo laptop rent knife stick fancy flame black fan oval stairs express identify crane truly anxiety wave notable gather toe tag"
+    force:
+      type: boolean
+      description: Flag that specify if exisiting wallet should be replaced, if false is send then error will be send back
+      default: false
+
+RegisterRequest:
+  description: Register profile payload
+  type: object
+  required:
+    - email
+  properties:
+    email:
+      type: string
+      description: Profile owner email, will be used for verification purpose
+      example: "john.doe@obada.io"
+
+Profile:
+  description: ClientHelper user profile
+  type: object
+  required:
+    - email
+  properties:
+    id:
+      type: string
+      description: Profile owner id
+    email:
+      type: string
+      description: Profile owner email, will be used for verification purpose
+      example: "john.doe@obada.io"
+
+AccountBalance:
+  description: OBADA Account balance
+  type: object
+  properties:
+    address:
+      type: string
+    balance:
+      type: object
+      properties:
+        denom:
+          type: string
+          description: "Denomination unit"
+        amount:
+          type: string

@@ -1,0 +1,43 @@
+name: "Tests"
+on:
+  workflow_call:
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  go-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: install go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.18
+
+      - name: install golangci-lint and goveralls
+        run: |
+          curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $GITHUB_WORKSPACE v1.52.1
+          go get -u github.com/mattn/goveralls
+          go mod tidy
+          go mod vendor
+      - name: test and lint
+        run: |
+          go test -race -timeout=60s -covermode=atomic -coverprofile=$GITHUB_WORKSPACE/profile.cov_tmp ./...
+          cat $GITHUB_WORKSPACE/profile.cov_tmp | grep -v "_mock.go" > $GITHUB_WORKSPACE/profile.cov
+          $GITHUB_WORKSPACE/golangci-lint --config ${GITHUB_WORKSPACE}/.golangci.yml run --print-issued-lines --out-format=github-actions ./...
+        working-directory: .
+        env:
+          GOFLAGS: "-mod=vendor"
+          TZ: "America/New_York"
+
+      - name: install goveralls
+        run: |
+          GO111MODULE=off go get -u github.com/mattn/goveralls
+      - name: submit coverage
+        run: $(go env GOPATH)/bin/goveralls -service="github" -coverprofile=$GITHUB_WORKSPACE/profile.cov
+        working-directory: .
+        env:
+          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
