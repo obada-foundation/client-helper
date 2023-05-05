@@ -155,7 +155,7 @@ func (t *ImmutableTree) Hash() ([]byte, error) {
 
 // Export returns an iterator that exports tree nodes as ExportNodes. These nodes can be
 // imported with MutableTree.Import() to recreate an identical tree.
-func (t *ImmutableTree) Export() *Exporter {
+func (t *ImmutableTree) Export() (*Exporter, error) {
 	return newExporter(t)
 }
 
@@ -330,4 +330,10 @@ func (t *ImmutableTree) nodeSize() int {
 		return false
 	})
 	return size
+}
+
+// TraverseStateChanges iterate the range of versions, compare each version to it's predecessor to extract the state changes of it.
+// endVersion is exclusive.
+func (t *ImmutableTree) TraverseStateChanges(startVersion, endVersion int64, fn func(version int64, changeSet *ChangeSet) error) error {
+	return t.ndb.traverseStateChanges(startVersion, endVersion, fn)
 }

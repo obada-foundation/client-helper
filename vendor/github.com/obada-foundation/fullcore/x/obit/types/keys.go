@@ -17,10 +17,12 @@ const (
 	MemStoreKey = "mem_obit"
 )
 
+// KeyPrefix returns the prefix of obit module
 func KeyPrefix(p string) []byte {
 	return []byte(p)
 }
 
 const (
+	// OBTClass defines the namespace for OBADA NFTs
 	OBTClass = "OBT"
 )

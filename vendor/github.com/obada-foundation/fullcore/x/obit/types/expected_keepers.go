@@ -6,6 +6,7 @@ import (
 	nft "github.com/cosmos/cosmos-sdk/x/nft"
 )
 
+// NftKeeper expected nft keeper
 type NftKeeper interface {
 	Update(ctx sdk.Context, token nft.NFT) error
 

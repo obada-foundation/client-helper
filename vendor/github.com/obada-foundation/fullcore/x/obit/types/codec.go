@@ -8,6 +8,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 )
 
+// RegisterCodec registers concrete types on the Amino codec
 func RegisterCodec(cdc *codec.LegacyAmino) {
 	cdc.RegisterConcrete(&MsgMintNFT{}, "obit/MsgMintNFT", nil)
 	cdc.RegisterConcrete(&MsgUpdateNFT{}, "obit/MsgUpdateNFT", nil)
@@ -15,6 +16,7 @@ func RegisterCodec(cdc *codec.LegacyAmino) {
 	// this line is used by starport scaffolding # 2
 }
 
+// RegisterInterfaces registers implementations for the module-specific
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterInterface("obadafoundation.fullcore.obit.NFTData", (*proto.Message)(nil), &NFTData{})
 	registry.RegisterImplementations((*sdk.Msg)(nil),
@@ -28,6 +30,9 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 }
 
 var (
-	Amino     = codec.NewLegacyAmino()
+	// Amino legacy codec
+	Amino = codec.NewLegacyAmino()
+
+	// ModuleCdc proto codec
 	ModuleCdc = codec.NewProtoCodec(cdctypes.NewInterfaceRegistry())
 )
