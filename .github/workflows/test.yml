@@ -10,24 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - name: install go
-        uses: actions/setup-go@v1
+      - uses: actions/setup-go@v4
         with:
-          go-version: 1.18
+          go-version-file: ./go.mod
+          cache: true
 
-      - name: install golangci-lint and goveralls
-        run: |
-          curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $GITHUB_WORKSPACE v1.52.1
-          go get -u github.com/mattn/goveralls
-          go mod tidy
-          go mod vendor
-      - name: test and lint
+      - name: test
         run: |
           go test -race -timeout=60s -covermode=atomic -coverprofile=$GITHUB_WORKSPACE/profile.cov_tmp ./...
           cat $GITHUB_WORKSPACE/profile.cov_tmp | grep -v "_mock.go" > $GITHUB_WORKSPACE/profile.cov
-          $GITHUB_WORKSPACE/golangci-lint --config ${GITHUB_WORKSPACE}/.golangci.yml run --print-issued-lines --out-format=github-actions ./...
         working-directory: .
         env:
           GOFLAGS: "-mod=vendor"
