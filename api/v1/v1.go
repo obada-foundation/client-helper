@@ -56,7 +56,8 @@ func Routes(app *web.App, cfg Config) {
 	app.Handle(http.MethodPost, version, "/accounts/:address/send-coins", accountsGrp.SendCoins, authenticate, accountMw)
 
 	obitsGrp := obits.Handlers{
-		DeviceSvc: cfg.DeviceSvc,
+		AccountSvc: cfg.AccountSvc,
+		DeviceSvc:  cfg.DeviceSvc,
 	}
 
 	app.Handle(http.MethodGet, version, "/obits/:key", obitsGrp.Obit, authenticate)

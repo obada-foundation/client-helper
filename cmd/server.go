@@ -11,8 +11,11 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/testutil/network"
+	"github.com/getsentry/sentry-go"
 	eb "github.com/mustafaturan/bus/v3"
 	"github.com/obada-foundation/client-helper/api"
+	"github.com/obada-foundation/client-helper/auth"
+	"github.com/obada-foundation/client-helper/bus"
 	"github.com/obada-foundation/client-helper/events"
 	"github.com/obada-foundation/client-helper/events/handlers"
 	"github.com/obada-foundation/client-helper/services"
@@ -20,25 +23,19 @@ import (
 	"github.com/obada-foundation/client-helper/services/blockchain"
 	"github.com/obada-foundation/client-helper/services/device"
 	"github.com/obada-foundation/client-helper/services/pubkey"
-	obadatypes "github.com/obada-foundation/fullcore/x/obit/types"
-
-	"github.com/getsentry/sentry-go"
-	"github.com/obada-foundation/client-helper/auth"
-	"github.com/obada-foundation/client-helper/bus"
 	"github.com/obada-foundation/client-helper/system/ipfs"
 	"github.com/obada-foundation/client-helper/system/obadanode"
 	"github.com/obada-foundation/client-helper/system/validate"
+	obadatypes "github.com/obada-foundation/fullcore/x/obit/types"
 	registry "github.com/obada-foundation/registry/client"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-
-	//	"github.com/obada-foundation/fullcore/x/obit/types"
 	"github.com/redis/go-redis/v9"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // ServerCommand with command line flags and env
@@ -187,6 +184,8 @@ func (s *ServerCommand) Execute(_ []string) error {
 		Bus:         eventBus,
 		Logger:      s.Logger,
 		RedisClient: rdb,
+		Registry:    regClient,
+		Keyring:     kr,
 
 		DeviceSvc:     deviceSvc,
 		BlockchainSvc: blockchainSvc,

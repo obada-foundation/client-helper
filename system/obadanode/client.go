@@ -2,6 +2,7 @@ package obadanode
 
 import (
 	"context"
+	"math"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -124,7 +125,9 @@ func NewClient(ctx context.Context, chainID, rpcURI, grpcURI string) (NodeClient
 	for _, denomUnit := range baseDenomMetdata.DenomUnits {
 		if denomUnit.Denom != baseDenom {
 			if _, ok := sdk.GetDenomUnit(denomUnit.Denom); !ok {
-				if er := sdk.RegisterDenom(denomUnit.Denom, sdk.NewDec(10*int64(denomUnit.Exponent))); er != nil {
+				exp := int64(1 * math.Pow10(int(denomUnit.Exponent)))
+
+				if er := sdk.RegisterDenom(denomUnit.Denom, sdk.NewDec(exp)); er != nil {
 					return c, er
 				}
 			}

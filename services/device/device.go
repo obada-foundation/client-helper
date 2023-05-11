@@ -196,7 +196,7 @@ func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice, pk cryptotypes.P
 			VerificationMethod: append(make([]*diddoc.VerificationMethod, 0, 1), &diddoc.VerificationMethod{
 				Id:              verifyMethodID,
 				Type:            regtypes.Ed25519VerificationKey2018JSONLD,
-				PublicKeyBase58: base58.Encode(pk.Bytes()),
+				PublicKeyBase58: base58.Encode(pk.PubKey().Bytes()),
 			}),
 			Authentication: []string{
 				verifyMethodID,
@@ -251,7 +251,7 @@ func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice, pk cryptotypes.P
 		Data:      data,
 	})
 	if err != nil {
-		return device, err
+		return device, fmt.Errorf("cannot save metadata to registry: %w", err)
 	}
 
 	resp, err := ds.registry.Get(ctx, &diddoc.GetRequest{

@@ -132,7 +132,7 @@ func (c NodeClient) BuildTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.P
 		return nil, err
 	}
 	txBuilder.SetGasLimit(uint64(200000))
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("obd", sdk.NewInt(1))))
+	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("rohi", sdk.NewInt(100000))))
 
 	// First round: we gather all the signer infos. We use the "set empty signature" hack to do that.
 	if er := txBuilder.SetSignatures(signing.SignatureV2{

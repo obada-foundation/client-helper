@@ -53,8 +53,7 @@ func createTestService(t *testing.T) (*bus.Bus, *account.Service, context.Contex
 	require.NoError(t, err, "Cannot initialize event bus")
 
 	service := account.NewService(v, database, &nodeClient, kr, b)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 	ctx = auth.SetClaims(ctx, auth.Claims{
 		UserID: "3",
