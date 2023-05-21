@@ -15,7 +15,55 @@ const (
 
 	// TypeMsgUpdateNFT defines the type string of MsgUpdateNFT
 	TypeMsgUpdateNFT = "update_nft"
+
+	// TypeMsgUpdateUriHash defines the type string of MsgUpdateUriHash
+	TypeMsgUpdateUriHash = "update_uri_hash"
 )
+
+var _ sdk.Msg = &MsgUpdateUriHash{}
+
+// NewMsgUpdateUriHash is a constructor function for MsgMintNFT
+func NewMsgUpdateUriHash(editor, did, uriHash string) *MsgUpdateUriHash {
+	return &MsgUpdateUriHash{
+		Editor:  editor,
+		Id:      did,
+		UriHash: uriHash,
+	}
+}
+
+// Route implements Msg.
+func (msg *MsgUpdateUriHash) Route() string {
+	return RouterKey
+}
+
+// Type implements Msg.
+func (msg *MsgUpdateUriHash) Type() string {
+	return TypeMsgUpdateUriHash
+}
+
+// GetSigners implements Msg.
+func (msg *MsgUpdateUriHash) GetSigners() []sdk.AccAddress {
+	editor, err := sdk.AccAddressFromBech32(msg.Editor)
+	if err != nil {
+		panic(err)
+	}
+	return []sdk.AccAddress{editor}
+}
+
+// GetSignBytes implements Msg.
+func (msg *MsgUpdateUriHash) GetSignBytes() []byte {
+	bz := ModuleCdc.MustMarshalJSON(msg)
+	return sdk.MustSortJSON(bz)
+}
+
+// ValidateBasic implements Msg.
+func (msg *MsgUpdateUriHash) ValidateBasic() error {
+	_, err := sdk.AccAddressFromBech32(msg.Editor)
+	if err != nil {
+		return sdkerrors.Wrapf(typeerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
+	}
+	return nil
+}
 
 var _ sdk.Msg = &MsgMintNFT{}
 

@@ -14,6 +14,7 @@ import (
 	"github.com/obada-foundation/client-helper/services/blockchain"
 	"github.com/obada-foundation/client-helper/services/device"
 	"github.com/obada-foundation/client-helper/system/web"
+	"github.com/obada-foundation/registry/client"
 	"go.uber.org/zap"
 )
 
@@ -27,6 +28,7 @@ type Config struct {
 	BlockchainSvc *blockchain.Service
 	DeviceSvc     *device.Service
 	ObitSvc       *services.ObitService
+	Registry      client.Client
 }
 
 // Routes binds all the version 1 routes.
@@ -58,9 +60,11 @@ func Routes(app *web.App, cfg Config) {
 	obitsGrp := obits.Handlers{
 		AccountSvc: cfg.AccountSvc,
 		DeviceSvc:  cfg.DeviceSvc,
+		Registry:   cfg.Registry,
 	}
 
 	app.Handle(http.MethodGet, version, "/obits/:key", obitsGrp.Obit, authenticate)
+	app.Handle(http.MethodGet, version, "/obits/:key/history", obitsGrp.History, authenticate)
 	app.Handle(http.MethodGet, version, "/obits", obitsGrp.Search, authenticate)
 	app.Handle(http.MethodPost, version, "/obits", obitsGrp.Save, authenticate)
 

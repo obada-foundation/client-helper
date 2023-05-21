@@ -12,6 +12,7 @@ import (
 	"github.com/obada-foundation/client-helper/services/blockchain"
 	"github.com/obada-foundation/client-helper/services/device"
 	"github.com/obada-foundation/client-helper/system/web"
+	"github.com/obada-foundation/registry/client"
 	"go.uber.org/zap"
 )
 
@@ -26,6 +27,7 @@ type APIMuxConfig struct { //nolint:revive //for future refactoring
 	BlockchainSvc *blockchain.Service
 	DeviceSvc     *device.Service
 	ObitSvc       *services.ObitService
+	Registry      client.Client
 }
 
 // APIMux constructs a http.Handler with all application routes defined.
@@ -48,6 +50,7 @@ func APIMux(cfg APIMuxConfig) http.Handler { //nolint:revive //for future refact
 		BlockchainSvc: cfg.BlockchainSvc,
 		DeviceSvc:     cfg.DeviceSvc,
 		ObitSvc:       cfg.ObitSvc,
+		Registry:      cfg.Registry,
 	})
 
 	return app

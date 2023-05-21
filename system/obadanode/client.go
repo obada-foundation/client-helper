@@ -105,6 +105,7 @@ func NewClient(ctx context.Context, chainID, rpcURI, grpcURI string) (NodeClient
 		&obadatypes.MsgMintNFT{},
 		&obadatypes.MsgUpdateNFT{},
 		&obadatypes.MsgTransferNFT{},
+		&obadatypes.MsgUpdateUriHash{},
 	)
 
 	c.cdc = codec.NewProtoCodec(encCfg.InterfaceRegistry)

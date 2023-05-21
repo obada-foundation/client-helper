@@ -49,11 +49,11 @@ SendCoinsRequest:
   description: Sending tokens payload
   type: object
   required:
-    - recepient_address
+    - recipient_address
     - amount
     - denom
   properties:
-    recepient_address:
+    recipient_address:
       type: string
     amount:
       type: string

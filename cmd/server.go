@@ -98,6 +98,7 @@ type IPFSGroup struct {
 // RegistryGroup defines options for connection to the OBADA DID registry
 type RegistryGroup struct {
 	GrpcURL string `long:"url" env:"URL" description:"Registry HTTP URL"`
+	HTTPUrl string `long:"http-url" env:"HTTP_URL" description:"Registry HTTP API URL"`
 }
 
 // Execute is the entry point for "server" command, called by flag parser
@@ -137,7 +138,7 @@ func (s *ServerCommand) Execute(_ []string) error {
 	}
 
 	accountSvc := account.NewService(validator, s.DB, nodeClient, kr, eventBus)
-	blockchainSvc := blockchain.NewService(nodeClient, s.Logger)
+	blockchainSvc := blockchain.NewService(nodeClient, s.Logger, s.Registry.HTTPUrl)
 
 	// IPFS client init
 	ipfsShell := ipfs.NewIPFS(s.IPFS.RPCURL)
@@ -220,6 +221,7 @@ func (s *ServerCommand) Execute(_ []string) error {
 		BlockchainSvc: blockchainSvc,
 		DeviceSvc:     deviceSvc,
 		ObitSvc:       obitSvc,
+		Registry:      regClient,
 	})
 
 	serverErrors := make(chan error, 1)
@@ -323,7 +325,7 @@ func (s *ServerCommand) makeWsClient(ctx context.Context, cfg wsClientConfig) (*
 							}
 
 							switch val[0] {
-							case "mint_obit":
+							case "mint_nft":
 								for _, msg := range tx.GetMsgs() {
 									msg, ok := msg.(*obadatypes.MsgMintNFT)
 									if ok {
@@ -336,9 +338,9 @@ func (s *ServerCommand) makeWsClient(ctx context.Context, cfg wsClientConfig) (*
 									}
 								}
 								s.Logger.Infow("obit was minted", "data", result.Data)
-							case "edit_metadata":
+							case "update_uri_hash":
 								for _, msg := range tx.GetMsgs() {
-									msg, ok := msg.(*obadatypes.MsgUpdateNFT)
+									msg, ok := msg.(*obadatypes.MsgUpdateUriHash)
 									if ok {
 										// for future refactoring
 										_ = cfg.bus.Emit(ctx, events.NftMetadataUpdated, msg.Id)
@@ -365,7 +367,7 @@ func (s *ServerCommand) makeWsClient(ctx context.Context, cfg wsClientConfig) (*
 									}
 								}
 
-							case "send_obit":
+							case "transfer_nft":
 								for _, msg := range tx.GetMsgs() {
 									msg, ok := msg.(*obadatypes.MsgTransferNFT)
 									if ok {

@@ -20,6 +20,7 @@ import (
 	ipfssh "github.com/obada-foundation/client-helper/system/ipfs"
 	"github.com/obada-foundation/client-helper/system/validate"
 	"github.com/obada-foundation/fullcore/x/obit/types"
+	"github.com/obada-foundation/registry/api"
 	"github.com/obada-foundation/registry/api/pb/v1/diddoc"
 	"github.com/obada-foundation/registry/client"
 	regtypes "github.com/obada-foundation/registry/types"
@@ -98,7 +99,7 @@ func (ds Service) handleDocuments(_ context.Context, sd svcs.SaveDevice, pk cryp
 			svcs.SaveDeviceDocument{
 				Name:          string(asset.PhysicalAssetIdentifiers),
 				Type:          string(asset.PhysicalAssetIdentifiers),
-				ShouldEncrypt: true,
+				ShouldEncrypt: false,
 			},
 		)
 	}
@@ -236,12 +237,9 @@ func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice, pk cryptotypes.P
 		Objects: objs,
 	}
 
-	dataBytes, err := proto.Marshal(data)
-	if err != nil {
-		return device, err
-	}
+	hash, err := api.MetadataDeterministicChecksum(data)
 
-	signature, err := pk.Sign(dataBytes)
+	signature, err := pk.Sign(hash[:])
 	if err != nil {
 		return device, err
 	}
@@ -529,7 +527,7 @@ func (ds Service) Delete(ctx context.Context, key string) error {
 		return fmt.Errorf("cannot delete device %s: %w", key, err)
 	}
 
-	if err := ds.db.Delete(makeDIDKey(userID, device.DID)); err != nil {
+	if err := ds.db.DeleteSync(makeDIDKey(userID, device.DID)); err != nil {
 		return fmt.Errorf("cannot delete device %s: %w", key, err)
 	}
 

@@ -64,7 +64,7 @@ type DeviceDocument struct {
 	Name        string `json:"name"`
 	URI         string `json:"uri"`
 	Description string `json:"description"`
-	Type        string `jsodevicen:"type"`
+	Type        string `json:"type"`
 	Hash        string `json:"hash"`
 	Encrypted   bool   `json:"encrypted"`
 }

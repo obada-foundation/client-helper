@@ -176,6 +176,8 @@ func (em EventManager) RegisterHandlers() {
 				DID := fmt.Sprintf("%v", e.Data)
 
 				em.redis.Publish(ctx, events.NftMinted, DID)
+
+				em.logger.Infow("nft minted", "EVENT", events.NftMinted, "DID", DID)
 			},
 			Matcher: events.NftMinted,
 		}
@@ -200,6 +202,8 @@ func (em EventManager) RegisterHandlers() {
 				DID := fmt.Sprintf("%v", e.Data)
 
 				em.redis.Publish(ctx, events.NftTransfered, DID)
+
+				em.logger.Infow("nft received", "EVENT", events.NftTransfered, "DID", DID)
 			},
 			Matcher: events.NftTransfered,
 		}

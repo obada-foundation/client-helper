@@ -112,7 +112,7 @@ func (h Handlers) Transfer(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	if err := h.DeviceSvc.Delete(ctx, d.DID); err != nil {
-		return err
+		return fmt.Errorf("cannot delete device after transfer: %w", err)
 	}
 
 	return web.RespondWithNoContent(ctx, w, http.StatusCreated)

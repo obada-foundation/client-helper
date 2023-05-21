@@ -12,27 +12,19 @@ NFT:
   description: OBADA NFT
   type: object
   properties:
-    class_id:
+    classId:
       type: string
     id:
       type: string
     uri:
       type: string
-    uri_hash:
+    uriHash:
       type: string
     data:
       type: object
       properties:
-          trust_anchor_token:
-            type: string
           usn:
             type: string
-          checksum:
-            type: string
-          documents:
-            type: array
-            items:
-              $ref: "#/NFTDocument"
 
 NFTDocument:
   description: OBADA NFT document

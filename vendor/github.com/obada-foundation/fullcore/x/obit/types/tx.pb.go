@@ -361,6 +361,107 @@ func (m *MsgUpdateNFTResponse) GetNFT() *NFT {
 	return nil
 }
 
+// MsgUpdateUriChecksum
+type MsgUpdateUriHash struct {
+	// editor is the address of the editor of nft metadata
+	Editor string `protobuf:"bytes,1,opt,name=editor,proto3" json:"editor,omitempty"`
+	// id stores DID
+	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	// uri_hash did document metadata checksum
+	UriHash string `protobuf:"bytes,3,opt,name=uri_hash,json=uriHash,proto3" json:"uri_hash,omitempty"`
+}
+
+func (m *MsgUpdateUriHash) Reset()         { *m = MsgUpdateUriHash{} }
+func (m *MsgUpdateUriHash) String() string { return proto.CompactTextString(m) }
+func (*MsgUpdateUriHash) ProtoMessage()    {}
+func (*MsgUpdateUriHash) Descriptor() ([]byte, []int) {
+	return fileDescriptor_401842c3f5d759a0, []int{6}
+}
+func (m *MsgUpdateUriHash) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpdateUriHash) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgUpdateUriHash.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgUpdateUriHash) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpdateUriHash.Merge(m, src)
+}
+func (m *MsgUpdateUriHash) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpdateUriHash) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpdateUriHash.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpdateUriHash proto.InternalMessageInfo
+
+func (m *MsgUpdateUriHash) GetEditor() string {
+	if m != nil {
+		return m.Editor
+	}
+	return ""
+}
+
+func (m *MsgUpdateUriHash) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *MsgUpdateUriHash) GetUriHash() string {
+	if m != nil {
+		return m.UriHash
+	}
+	return ""
+}
+
+// MsgUpdateUriHashResponse
+type MsgUpdateUriHashResponse struct {
+}
+
+func (m *MsgUpdateUriHashResponse) Reset()         { *m = MsgUpdateUriHashResponse{} }
+func (m *MsgUpdateUriHashResponse) String() string { return proto.CompactTextString(m) }
+func (*MsgUpdateUriHashResponse) ProtoMessage()    {}
+func (*MsgUpdateUriHashResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_401842c3f5d759a0, []int{7}
+}
+func (m *MsgUpdateUriHashResponse) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *MsgUpdateUriHashResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_MsgUpdateUriHashResponse.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *MsgUpdateUriHashResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MsgUpdateUriHashResponse.Merge(m, src)
+}
+func (m *MsgUpdateUriHashResponse) XXX_Size() int {
+	return m.Size()
+}
+func (m *MsgUpdateUriHashResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MsgUpdateUriHashResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MsgUpdateUriHashResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*MsgMintNFT)(nil), "obadafoundation.fullcore.obit.MsgMintNFT")
 	proto.RegisterType((*MsgMintNFTResponse)(nil), "obadafoundation.fullcore.obit.MsgMintNFTResponse")
@@ -368,40 +469,45 @@ func init() {
 	proto.RegisterType((*MsgTransferNFTResponse)(nil), "obadafoundation.fullcore.obit.MsgTransferNFTResponse")
 	proto.RegisterType((*MsgUpdateNFT)(nil), "obadafoundation.fullcore.obit.MsgUpdateNFT")
 	proto.RegisterType((*MsgUpdateNFTResponse)(nil), "obadafoundation.fullcore.obit.MsgUpdateNFTResponse")
+	proto.RegisterType((*MsgUpdateUriHash)(nil), "obadafoundation.fullcore.obit.MsgUpdateUriHash")
+	proto.RegisterType((*MsgUpdateUriHashResponse)(nil), "obadafoundation.fullcore.obit.MsgUpdateUriHashResponse")
 }
 
 func init() { proto.RegisterFile("obit/v1/tx.proto", fileDescriptor_401842c3f5d759a0) }
 
 var fileDescriptor_401842c3f5d759a0 = []byte{
-	// 442 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x93, 0x41, 0x8b, 0xd3, 0x40,
-	0x14, 0xc7, 0x9b, 0x56, 0xb7, 0xbb, 0xaf, 0xb2, 0xac, 0xc3, 0xb2, 0xc4, 0x80, 0x41, 0x82, 0x88,
-	0x22, 0x9b, 0xd0, 0xae, 0xde, 0x45, 0xa4, 0x08, 0x9a, 0x1e, 0x4a, 0xbc, 0x78, 0x91, 0x69, 0x33,
-	0x9d, 0x0e, 0xec, 0xce, 0x84, 0x99, 0xc9, 0x52, 0xbf, 0x85, 0x1f, 0xcb, 0xe3, 0xe2, 0xc9, 0xa3,
-	0xb4, 0x5f, 0x44, 0x32, 0x99, 0x49, 0xa3, 0xa0, 0xd9, 0xbd, 0xbd, 0xf7, 0xf8, 0xff, 0xff, 0xbf,
-	0x97, 0xc9, 0x0c, 0x9c, 0x88, 0x05, 0xd3, 0xc9, 0xf5, 0x38, 0xd1, 0x9b, 0xb8, 0x90, 0x42, 0x0b,
-	0xf4, 0x58, 0x2c, 0x70, 0x8e, 0x57, 0xa2, 0xe4, 0x39, 0xd6, 0x4c, 0xf0, 0x78, 0x55, 0x5e, 0x5e,
-	0x2e, 0x85, 0x24, 0x71, 0x25, 0x0d, 0x1e, 0x3a, 0x03, 0x5f, 0xe9, 0xda, 0x11, 0x9c, 0x52, 0x41,
-	0x85, 0x29, 0x93, 0xaa, 0xaa, 0xa7, 0x51, 0x09, 0x90, 0x2a, 0x9a, 0x32, 0xae, 0x67, 0xd3, 0x0c,
-	0xf9, 0x30, 0x5c, 0x4a, 0x82, 0xb5, 0x90, 0xbe, 0xf7, 0xc4, 0x7b, 0x7e, 0x34, 0x77, 0x2d, 0x3a,
-	0x86, 0x3e, 0xcb, 0xfd, 0xbe, 0x19, 0xf6, 0x59, 0x8e, 0x4e, 0x60, 0x50, 0x4a, 0xe6, 0x0f, 0xcc,
-	0xa0, 0x2a, 0xd1, 0x23, 0x38, 0x2c, 0x25, 0xfb, 0xb2, 0xc6, 0x6a, 0xed, 0xdf, 0xab, 0xcd, 0xa5,
-	0x64, 0xef, 0xb1, 0x5a, 0x1b, 0xb1, 0xe2, 0xfe, 0x7d, 0x2b, 0x56, 0x3c, 0x7a, 0x0a, 0x68, 0x8f,
-	0x9d, 0x13, 0x55, 0x08, 0xae, 0x88, 0x85, 0x78, 0x0e, 0x12, 0x65, 0x70, 0x9c, 0x2a, 0x9a, 0x49,
-	0xcc, 0xd5, 0x8a, 0xc8, 0x6a, 0xc1, 0xbf, 0x14, 0xe8, 0x0c, 0x0e, 0x14, 0xe1, 0x39, 0x91, 0x76,
-	0x35, 0xdb, 0xa1, 0x00, 0x0e, 0x25, 0x59, 0x12, 0x76, 0x4d, 0xa4, 0xdd, 0xb1, 0xe9, 0x23, 0x1f,
-	0xce, 0xfe, 0x4c, 0x75, 0xfc, 0x68, 0x03, 0x0f, 0x52, 0x45, 0x3f, 0x15, 0x39, 0xd6, 0xe4, 0x1f,
-	0x34, 0x92, 0xb3, 0xea, 0x74, 0x2c, 0xad, 0xee, 0xd0, 0x1b, 0x18, 0xce, 0xa6, 0xd9, 0x3b, 0xac,
-	0xb1, 0x81, 0x8d, 0x26, 0xcf, 0xe2, 0xff, 0xfe, 0x9e, 0xd8, 0xaa, 0xe7, 0xce, 0x16, 0x7d, 0x84,
-	0xd3, 0x36, 0xb9, 0x39, 0x91, 0x57, 0x30, 0x98, 0x4d, 0x33, 0xb3, 0xc2, 0x68, 0x12, 0x75, 0xa7,
-	0xce, 0x2b, 0xf9, 0xe4, 0x47, 0x1f, 0x06, 0xa9, 0xa2, 0xe8, 0x0a, 0x8e, 0xf6, 0x1f, 0xf3, 0xb2,
-	0xc3, 0xdd, 0xe6, 0x07, 0x17, 0x77, 0x10, 0x37, 0xcb, 0x52, 0x18, 0xba, 0x8b, 0xf4, 0xa2, 0xdb,
-	0x6f, 0xa5, 0xc1, 0xf8, 0xd6, 0xd2, 0x06, 0xa4, 0x60, 0xd4, 0xbe, 0x14, 0xe7, 0xdd, 0x09, 0x2d,
-	0x79, 0xf0, 0xfa, 0x4e, 0x72, 0x07, 0x7d, 0xfb, 0xe1, 0xfb, 0x36, 0xf4, 0x6e, 0xb6, 0xa1, 0xf7,
-	0x6b, 0x1b, 0x7a, 0xdf, 0x76, 0x61, 0xef, 0x66, 0x17, 0xf6, 0x7e, 0xee, 0xc2, 0xde, 0xe7, 0x31,
-	0x65, 0x7a, 0x5d, 0x2e, 0xe2, 0xa5, 0xb8, 0x4a, 0x4c, 0xf4, 0xf9, 0x3e, 0x3b, 0x71, 0xd9, 0xc9,
-	0x26, 0x31, 0x6f, 0x52, 0x7f, 0x2d, 0x88, 0x5a, 0x1c, 0x98, 0xd7, 0x77, 0xf1, 0x3b, 0x00, 0x00,
-	0xff, 0xff, 0x8e, 0x6f, 0xe0, 0xc0, 0xd9, 0x03, 0x00, 0x00,
+	// 486 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0x4f, 0x8b, 0xd3, 0x40,
+	0x14, 0x6f, 0x1a, 0xdd, 0xee, 0xbe, 0xea, 0x52, 0x87, 0x65, 0x89, 0x01, 0x83, 0x04, 0x11, 0x45,
+	0x36, 0xa1, 0x5d, 0xc5, 0xab, 0x88, 0x14, 0x41, 0xd3, 0x43, 0x49, 0x2f, 0x5e, 0x64, 0xda, 0x4c,
+	0xd3, 0x81, 0xdd, 0x99, 0x32, 0x33, 0x59, 0xba, 0xdf, 0xc2, 0x8f, 0xe5, 0x45, 0xd8, 0xa3, 0x47,
+	0x69, 0xbf, 0x88, 0x64, 0x3a, 0x93, 0xa6, 0x05, 0xed, 0xf6, 0x36, 0xef, 0xf1, 0xfb, 0x37, 0xef,
+	0x31, 0x03, 0x1d, 0x3e, 0xa6, 0x2a, 0xbe, 0xe9, 0xc6, 0x6a, 0x11, 0xcd, 0x05, 0x57, 0x1c, 0x3d,
+	0xe3, 0x63, 0x9c, 0xe1, 0x29, 0x2f, 0x58, 0x86, 0x15, 0xe5, 0x2c, 0x9a, 0x16, 0x57, 0x57, 0x13,
+	0x2e, 0x48, 0x54, 0x42, 0xfd, 0x27, 0x96, 0xc0, 0xa6, 0x6a, 0xcd, 0xf0, 0xcf, 0x72, 0x9e, 0x73,
+	0x7d, 0x8c, 0xcb, 0xd3, 0xba, 0x1b, 0x16, 0x00, 0x89, 0xcc, 0x13, 0xca, 0xd4, 0xa0, 0x9f, 0x22,
+	0x0f, 0x5a, 0x13, 0x41, 0xb0, 0xe2, 0xc2, 0x73, 0x9e, 0x3b, 0xaf, 0x4e, 0x86, 0xb6, 0x44, 0xa7,
+	0xd0, 0xa4, 0x99, 0xd7, 0xd4, 0xcd, 0x26, 0xcd, 0x50, 0x07, 0xdc, 0x42, 0x50, 0xcf, 0xd5, 0x8d,
+	0xf2, 0x88, 0x9e, 0xc2, 0x71, 0x21, 0xe8, 0xf7, 0x19, 0x96, 0x33, 0xef, 0xc1, 0x9a, 0x5c, 0x08,
+	0xfa, 0x19, 0xcb, 0x99, 0x06, 0x4b, 0xe6, 0x3d, 0x34, 0x60, 0xc9, 0xc2, 0x17, 0x80, 0x36, 0xb6,
+	0x43, 0x22, 0xe7, 0x9c, 0x49, 0x62, 0x4c, 0x1c, 0x6b, 0x12, 0xa6, 0x70, 0x9a, 0xc8, 0x3c, 0x15,
+	0x98, 0xc9, 0x29, 0x11, 0x65, 0xc0, 0x1d, 0x04, 0x3a, 0x87, 0x23, 0x49, 0x58, 0x46, 0x84, 0x89,
+	0x66, 0x2a, 0xe4, 0xc3, 0xb1, 0x20, 0x13, 0x42, 0x6f, 0x88, 0x30, 0x19, 0xab, 0x3a, 0xf4, 0xe0,
+	0x7c, 0x5b, 0xd5, 0xfa, 0x87, 0x0b, 0x78, 0x94, 0xc8, 0x7c, 0x34, 0xcf, 0xb0, 0x22, 0xff, 0x70,
+	0x23, 0x19, 0x2d, 0xa7, 0x63, 0xdc, 0xd6, 0x15, 0xfa, 0x00, 0xad, 0x41, 0x3f, 0xfd, 0x84, 0x15,
+	0xd6, 0x66, 0xed, 0xde, 0xcb, 0xe8, 0xbf, 0xeb, 0x89, 0x0c, 0x7a, 0x68, 0x69, 0xe1, 0x57, 0x38,
+	0xab, 0x3b, 0x57, 0x13, 0x79, 0x0b, 0xee, 0xa0, 0x9f, 0xea, 0x08, 0xed, 0x5e, 0xb8, 0x5f, 0x75,
+	0x58, 0xc2, 0xc3, 0x11, 0x74, 0x2a, 0xb5, 0x91, 0xd9, 0xc1, 0x26, 0xbb, 0xb3, 0x95, 0x7d, 0x77,
+	0xb1, 0xf5, 0x35, 0xba, 0x5b, 0x6b, 0x0c, 0x7d, 0xf0, 0x76, 0x65, 0x6d, 0xd0, 0xde, 0x2f, 0x17,
+	0xdc, 0x44, 0xe6, 0xe8, 0x1a, 0x4e, 0x36, 0xf3, 0x7b, 0xb3, 0x27, 0x70, 0xfd, 0xca, 0xfe, 0xe5,
+	0x01, 0xe0, 0x6a, 0x3e, 0xb7, 0xf0, 0x78, 0xfb, 0x9a, 0xf1, 0x7d, 0x55, 0x0c, 0xc1, 0x7f, 0x7f,
+	0x20, 0xa1, 0xb2, 0xce, 0xa1, 0x65, 0x9f, 0xcd, 0xeb, 0xfd, 0x1a, 0x06, 0xea, 0x77, 0xef, 0x0d,
+	0xad, 0x8c, 0x24, 0xb4, 0xeb, 0x4f, 0xe0, 0x62, 0xbf, 0x42, 0x0d, 0xee, 0xbf, 0x3b, 0x08, 0x6e,
+	0x4d, 0x3f, 0x7e, 0xf9, 0xb9, 0x0c, 0x9c, 0xbb, 0x65, 0xe0, 0xfc, 0x59, 0x06, 0xce, 0x8f, 0x55,
+	0xd0, 0xb8, 0x5b, 0x05, 0x8d, 0xdf, 0xab, 0xa0, 0xf1, 0xad, 0x9b, 0x53, 0x35, 0x2b, 0xc6, 0xd1,
+	0x84, 0x5f, 0xc7, 0x5a, 0xfa, 0x62, 0xa3, 0x1d, 0x5b, 0xed, 0x78, 0x11, 0xeb, 0x1f, 0x48, 0xdd,
+	0xce, 0x89, 0x1c, 0x1f, 0xe9, 0xbf, 0xe6, 0xf2, 0x6f, 0x00, 0x00, 0x00, 0xff, 0xff, 0xf4, 0x8c,
+	0x49, 0x29, 0xc7, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -418,6 +524,8 @@ const _ = grpc.SupportPackageIsVersion4
 type MsgClient interface {
 	// UpdateNFT updates NFT properties (definition will come in future)
 	UpdateNFT(ctx context.Context, in *MsgUpdateNFT, opts ...grpc.CallOption) (*MsgUpdateNFTResponse, error)
+	// UpdateUriHash updates URI hash for existing NFT
+	UpdateUriHash(ctx context.Context, in *MsgUpdateUriHash, opts ...grpc.CallOption) (*MsgUpdateUriHashResponse, error)
 	// MintNFT mint a new OBADA NFT (Obit)
 	MintNFT(ctx context.Context, in *MsgMintNFT, opts ...grpc.CallOption) (*MsgMintNFTResponse, error)
 	// TransferNFT send NFT to the new owner address
@@ -435,6 +543,15 @@ func NewMsgClient(cc grpc1.ClientConn) MsgClient {
 func (c *msgClient) UpdateNFT(ctx context.Context, in *MsgUpdateNFT, opts ...grpc.CallOption) (*MsgUpdateNFTResponse, error) {
 	out := new(MsgUpdateNFTResponse)
 	err := c.cc.Invoke(ctx, "/obadafoundation.fullcore.obit.Msg/UpdateNFT", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) UpdateUriHash(ctx context.Context, in *MsgUpdateUriHash, opts ...grpc.CallOption) (*MsgUpdateUriHashResponse, error) {
+	out := new(MsgUpdateUriHashResponse)
+	err := c.cc.Invoke(ctx, "/obadafoundation.fullcore.obit.Msg/UpdateUriHash", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -463,6 +580,8 @@ func (c *msgClient) TransferNFT(ctx context.Context, in *MsgTransferNFT, opts ..
 type MsgServer interface {
 	// UpdateNFT updates NFT properties (definition will come in future)
 	UpdateNFT(context.Context, *MsgUpdateNFT) (*MsgUpdateNFTResponse, error)
+	// UpdateUriHash updates URI hash for existing NFT
+	UpdateUriHash(context.Context, *MsgUpdateUriHash) (*MsgUpdateUriHashResponse, error)
 	// MintNFT mint a new OBADA NFT (Obit)
 	MintNFT(context.Context, *MsgMintNFT) (*MsgMintNFTResponse, error)
 	// TransferNFT send NFT to the new owner address
@@ -475,6 +594,9 @@ type UnimplementedMsgServer struct {
 
 func (*UnimplementedMsgServer) UpdateNFT(ctx context.Context, req *MsgUpdateNFT) (*MsgUpdateNFTResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateNFT not implemented")
+}
+func (*UnimplementedMsgServer) UpdateUriHash(ctx context.Context, req *MsgUpdateUriHash) (*MsgUpdateUriHashResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUriHash not implemented")
 }
 func (*UnimplementedMsgServer) MintNFT(ctx context.Context, req *MsgMintNFT) (*MsgMintNFTResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MintNFT not implemented")
@@ -501,6 +623,24 @@ func _Msg_UpdateNFT_Handler(srv interface{}, ctx context.Context, dec func(inter
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MsgServer).UpdateNFT(ctx, req.(*MsgUpdateNFT))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Msg_UpdateUriHash_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgUpdateUriHash)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).UpdateUriHash(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/obadafoundation.fullcore.obit.Msg/UpdateUriHash",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).UpdateUriHash(ctx, req.(*MsgUpdateUriHash))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -548,6 +688,10 @@ var _Msg_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateNFT",
 			Handler:    _Msg_UpdateNFT_Handler,
+		},
+		{
+			MethodName: "UpdateUriHash",
+			Handler:    _Msg_UpdateUriHash_Handler,
 		},
 		{
 			MethodName: "MintNFT",
@@ -801,6 +945,73 @@ func (m *MsgUpdateNFTResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *MsgUpdateUriHash) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpdateUriHash) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpdateUriHash) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.UriHash) > 0 {
+		i -= len(m.UriHash)
+		copy(dAtA[i:], m.UriHash)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.UriHash)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Id) > 0 {
+		i -= len(m.Id)
+		copy(dAtA[i:], m.Id)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Editor) > 0 {
+		i -= len(m.Editor)
+		copy(dAtA[i:], m.Editor)
+		i = encodeVarintTx(dAtA, i, uint64(len(m.Editor)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *MsgUpdateUriHashResponse) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *MsgUpdateUriHashResponse) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *MsgUpdateUriHashResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTx(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTx(v)
 	base := offset
@@ -915,6 +1126,36 @@ func (m *MsgUpdateNFTResponse) Size() (n int) {
 		l = m.NFT.Size()
 		n += 1 + l + sovTx(uint64(l))
 	}
+	return n
+}
+
+func (m *MsgUpdateUriHash) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Editor)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.Id)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	l = len(m.UriHash)
+	if l > 0 {
+		n += 1 + l + sovTx(uint64(l))
+	}
+	return n
+}
+
+func (m *MsgUpdateUriHashResponse) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	return n
 }
 
@@ -1627,6 +1868,202 @@ func (m *MsgUpdateNFTResponse) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpdateUriHash) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpdateUriHash: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpdateUriHash: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Editor", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Editor = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field UriHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.UriHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *MsgUpdateUriHashResponse) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: MsgUpdateUriHashResponse: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: MsgUpdateUriHashResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTx(dAtA[iNdEx:])

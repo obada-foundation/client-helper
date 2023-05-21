@@ -87,8 +87,8 @@ func NewDIDDoc() DIDDocument {
 			Ed25519VerificationKey2018JSONLD,
 		},
 		ID:                 "",
-		VerificationMethod: []VerificationMethod{},
-		Authentication:     []string{},
+		VerificationMethod: make([]VerificationMethod, 0),
+		Authentication:     make([]string, 0),
 		Metadata: Metadata{
 			VersionID: 0,
 			Objects:   make([]asset.Object, 0),
