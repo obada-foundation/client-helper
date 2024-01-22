@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strings"
+	"sync"
 	"testing"
 )
 
@@ -15,31 +17,31 @@ func newIntegerFromString(s string) (*big.Int, bool) {
 	return new(big.Int).SetString(s, 0)
 }
 
-func equal(i *big.Int, i2 *big.Int) bool { return i.Cmp(i2) == 0 }
+func equal(i, i2 *big.Int) bool { return i.Cmp(i2) == 0 }
 
-func gt(i *big.Int, i2 *big.Int) bool { return i.Cmp(i2) == 1 }
+func gt(i, i2 *big.Int) bool { return i.Cmp(i2) == 1 }
 
-func gte(i *big.Int, i2 *big.Int) bool { return i.Cmp(i2) >= 0 }
+func gte(i, i2 *big.Int) bool { return i.Cmp(i2) >= 0 }
 
-func lt(i *big.Int, i2 *big.Int) bool { return i.Cmp(i2) == -1 }
+func lt(i, i2 *big.Int) bool { return i.Cmp(i2) == -1 }
 
-func lte(i *big.Int, i2 *big.Int) bool { return i.Cmp(i2) <= 0 }
+func lte(i, i2 *big.Int) bool { return i.Cmp(i2) <= 0 }
 
-func add(i *big.Int, i2 *big.Int) *big.Int { return new(big.Int).Add(i, i2) }
+func add(i, i2 *big.Int) *big.Int { return new(big.Int).Add(i, i2) }
 
-func sub(i *big.Int, i2 *big.Int) *big.Int { return new(big.Int).Sub(i, i2) }
+func sub(i, i2 *big.Int) *big.Int { return new(big.Int).Sub(i, i2) }
 
-func mul(i *big.Int, i2 *big.Int) *big.Int { return new(big.Int).Mul(i, i2) }
+func mul(i, i2 *big.Int) *big.Int { return new(big.Int).Mul(i, i2) }
 
-func div(i *big.Int, i2 *big.Int) *big.Int { return new(big.Int).Quo(i, i2) }
+func div(i, i2 *big.Int) *big.Int { return new(big.Int).Quo(i, i2) }
 
-func mod(i *big.Int, i2 *big.Int) *big.Int { return new(big.Int).Mod(i, i2) }
+func mod(i, i2 *big.Int) *big.Int { return new(big.Int).Mod(i, i2) }
 
 func neg(i *big.Int) *big.Int { return new(big.Int).Neg(i) }
 
 func abs(i *big.Int) *big.Int { return new(big.Int).Abs(i) }
 
-func min(i *big.Int, i2 *big.Int) *big.Int {
+func min(i, i2 *big.Int) *big.Int {
 	if i.Cmp(i2) == 1 {
 		return new(big.Int).Set(i2)
 	}
@@ -47,7 +49,7 @@ func min(i *big.Int, i2 *big.Int) *big.Int {
 	return new(big.Int).Set(i)
 }
 
-func max(i *big.Int, i2 *big.Int) *big.Int {
+func max(i, i2 *big.Int) *big.Int {
 	if i.Cmp(i2) == -1 {
 		return new(big.Int).Set(i2)
 	}
@@ -69,7 +71,7 @@ func unmarshalText(i *big.Int, text string) error {
 
 var _ customProtobufType = (*Int)(nil)
 
-// Int wraps big.Int with a 257 bit range bound
+// Int wraps big.Int with a 256 bit range bound
 // Checks overflow, underflow and division by zero
 // Exists in range from -(2^256 - 1) to 2^256 - 1
 type Int struct {
@@ -82,6 +84,14 @@ func (i Int) BigInt() *big.Int {
 		return nil
 	}
 	return new(big.Int).Set(i.i)
+}
+
+// BigInt converts Int to big.Int, mutative the input
+func (i Int) BigIntMut() *big.Int {
+	if i.IsNil() {
+		return nil
+	}
+	return i.i
 }
 
 // IsNil returns true if Int is uninitialized
@@ -103,6 +113,7 @@ func NewIntFromUint64(n uint64) Int {
 
 // NewIntFromBigInt constructs Int from big.Int. If the provided big.Int is nil,
 // it returns an empty instance. This function panics if the bit length is > 256.
+// Note, the caller can safely mutate the argument after this function returns.
 func NewIntFromBigInt(i *big.Int) Int {
 	if i == nil {
 		return Int{}
@@ -111,6 +122,22 @@ func NewIntFromBigInt(i *big.Int) Int {
 	if i.BitLen() > MaxBitLen {
 		panic("NewIntFromBigInt() out of bound")
 	}
+
+	return Int{new(big.Int).Set(i)}
+}
+
+// NewIntFromBigIntMut constructs Int from big.Int. If the provided big.Int is nil,
+// it returns an empty instance. This function panics if the bit length is > 256.
+// Note, this function mutate the argument.
+func NewIntFromBigIntMut(i *big.Int) Int {
+	if i == nil {
+		return Int{}
+	}
+
+	if i.BitLen() > MaxBitLen {
+		panic("NewIntFromBigInt() out of bound")
+	}
+
 	return Int{i}
 }
 
@@ -150,6 +177,11 @@ func ZeroInt() Int { return Int{big.NewInt(0)} }
 
 // OneInt returns Int value with one
 func OneInt() Int { return Int{big.NewInt(1)} }
+
+// ToLegacyDec converts Int to LegacyDec
+func (i Int) ToLegacyDec() LegacyDec {
+	return LegacyNewDecFromInt(i)
+}
 
 // Int64 converts Int to int64
 // Panics if the value is out of range
@@ -430,5 +462,78 @@ func (i *Int) UnmarshalAmino(bz []byte) error { return i.Unmarshal(bz) }
 
 // intended to be used with require/assert:  require.True(IntEq(...))
 func IntEq(t *testing.T, exp, got Int) (*testing.T, bool, string, string, string) {
+	t.Helper()
 	return t, exp.Equal(got), "expected:\t%v\ngot:\t\t%v", exp.String(), got.String()
+}
+
+func hasOnlyDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+const thousandSeparator string = "'"
+
+var stringsBuilderPool = &sync.Pool{
+	New: func() any { return new(strings.Builder) },
+}
+
+// FormatInt formats an integer (encoded as in protobuf) into a value-rendered
+// string following ADR-050. This function operates with string manipulation
+// (instead of manipulating the int or math.Int object).
+func FormatInt(v string) (string, error) {
+	if len(v) == 0 {
+		return "", fmt.Errorf("cannot format empty string")
+	}
+
+	sign := ""
+	if v[0] == '-' {
+		sign = "-"
+		v = v[1:]
+	}
+	if len(v) > 1 {
+		v = strings.TrimLeft(v, "0")
+	}
+
+	// Ensure that the string contains only digits at this point.
+	if !hasOnlyDigits(v) {
+		return "", fmt.Errorf("expecting only digits 0-9, but got non-digits in %q", v)
+	}
+
+	// 1. Less than 4 digits don't need any formatting.
+	if len(v) <= 3 {
+		return sign + v, nil
+	}
+
+	sb := stringsBuilderPool.Get().(*strings.Builder)
+	defer stringsBuilderPool.Put(sb)
+	sb.Reset()
+	sb.Grow(len(v) + len(v)/3) // Exactly v + numberOfThousandSeparatorsIn(v)
+
+	// 2. If the length of v is not a multiple of 3 e.g. 1234 or 12345, to achieve 1'234 or 12'345,
+	// we can simply slide to the first mod3 values of v that aren't the multiples of 3 then insert in
+	// the thousands separator so in this case: write(12'); then the remaining v will be entirely multiple
+	// of 3 hence v = 34*
+	if mod3 := len(v) % 3; mod3 != 0 {
+		sb.WriteString(v[:mod3])
+		v = v[mod3:]
+		sb.WriteString(thousandSeparator)
+	}
+
+	// 3. By this point v is entirely multiples of 3 hence we just insert the separator at every 3 digit.
+	for i := 0; i < len(v); i += 3 {
+		end := i + 3
+		sb.WriteString(v[i:end])
+		if end < len(v) {
+			sb.WriteString(thousandSeparator)
+		}
+	}
+
+	return sign + sb.String(), nil
 }

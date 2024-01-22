@@ -78,7 +78,7 @@ func (bs Service) MintGasEstimate(ctx context.Context, d services.Device, addree
 
 func (bs Service) buildMintMsg(d services.Device, address string) *types.MsgMintNFT {
 
-	URI := fmt.Sprintf("%s/api/v1.0/diddoc/%s", bs.registryUrl, d.DID)
+	URI := fmt.Sprintf("%s/api/v1.0/diddoc/%s", bs.registryURL, d.DID)
 
 	return &types.MsgMintNFT{
 		Creator: address,

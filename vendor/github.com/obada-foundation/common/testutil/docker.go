@@ -59,6 +59,19 @@ func StartContainer(image string, ports []string, args ...string) (*Container, e
 	return &c, nil
 }
 
+// ExecInContainer executes a command in the specified container.
+func ExecInContainer(id string, args ...string) ([]byte, error) {
+	arg := []string{"exec", "-t", id}
+	arg = append(arg, args...)
+
+	cmd, err := exec.Command("docker", arg...).CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("could not execute command container %s: %w. %s", id, err, string(cmd))
+	}
+
+	return cmd, nil
+}
+
 // StopContainer stops and removes the specified container.
 func StopContainer(id string) error {
 	if err := exec.Command("docker", "stop", id).Run(); err != nil {

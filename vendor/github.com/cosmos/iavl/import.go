@@ -2,10 +2,10 @@ package iavl
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 
-	"github.com/pkg/errors"
-
-	db "github.com/tendermint/tm-db"
+	db "github.com/cosmos/cosmos-db"
 )
 
 // maxBatchSize is the maximum size of the import batch before flushing it to the database
@@ -27,6 +27,10 @@ type Importer struct {
 	batch     db.Batch
 	batchSize uint32
 	stack     []*Node
+	nonces    []uint32
+
+	// inflightCommit tracks a batch commit, if any.
+	inflightCommit <-chan error
 }
 
 // newImporter creates a new Importer for an empty MutableTree.
@@ -38,7 +42,7 @@ func newImporter(tree *MutableTree, version int64) (*Importer, error) {
 		return nil, errors.New("imported version cannot be negative")
 	}
 	if tree.ndb.latestVersion > 0 {
-		return nil, errors.Errorf("found database at version %d, must be 0", tree.ndb.latestVersion)
+		return nil, fmt.Errorf("found database at version %d, must be 0", tree.ndb.latestVersion)
 	}
 	if !tree.IsEmpty() {
 		return nil, errors.New("tree must be empty")
@@ -49,12 +53,63 @@ func newImporter(tree *MutableTree, version int64) (*Importer, error) {
 		version: version,
 		batch:   tree.ndb.db.NewBatch(),
 		stack:   make([]*Node, 0, 8),
+		nonces:  make([]uint32, version+1),
 	}, nil
+}
+
+// writeNode writes the node content to the storage.
+func (i *Importer) writeNode(node *Node) error {
+	node._hash(node.nodeKey.version)
+	if err := node.validate(); err != nil {
+		return err
+	}
+
+	buf := bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer bufPool.Put(buf)
+
+	if err := node.writeBytes(buf); err != nil {
+		return err
+	}
+
+	bytesCopy := make([]byte, buf.Len())
+	copy(bytesCopy, buf.Bytes())
+
+	if err := i.batch.Set(i.tree.ndb.nodeKey(node.GetKey()), bytesCopy); err != nil {
+		return err
+	}
+
+	i.batchSize++
+	if i.batchSize >= maxBatchSize {
+		// Wait for previous batch.
+		var err error
+		if i.inflightCommit != nil {
+			err = <-i.inflightCommit
+			i.inflightCommit = nil
+		}
+		if err != nil {
+			return err
+		}
+		result := make(chan error)
+		i.inflightCommit = result
+		go func(batch db.Batch) {
+			defer batch.Close()
+			result <- batch.Write()
+		}(i.batch)
+		i.batch = i.tree.ndb.db.NewBatch()
+		i.batchSize = 0
+	}
+
+	return nil
 }
 
 // Close frees all resources. It is safe to call multiple times. Uncommitted nodes may already have
 // been flushed to the database, but will not be visible.
 func (i *Importer) Close() {
+	if i.inflightCommit != nil {
+		<-i.inflightCommit
+		i.inflightCommit = nil
+	}
 	if i.batch != nil {
 		i.batch.Close()
 	}
@@ -73,15 +128,14 @@ func (i *Importer) Add(exportNode *ExportNode) error {
 		return errors.New("node cannot be nil")
 	}
 	if exportNode.Version > i.version {
-		return errors.Errorf("node version %v can't be greater than import version %v",
+		return fmt.Errorf("node version %v can't be greater than import version %v",
 			exportNode.Version, i.version)
 	}
 
 	node := &Node{
-		key:     exportNode.Key,
-		value:   exportNode.Value,
-		version: exportNode.Version,
-		height:  exportNode.Height,
+		key:           exportNode.Key,
+		value:         exportNode.Value,
+		subtreeHeight: exportNode.Height,
 	}
 
 	// We build the tree from the bottom-left up. The stack is used to store unresolved left
@@ -92,70 +146,40 @@ func (i *Importer) Add(exportNode *ExportNode) error {
 	// We don't modify the stack until we've verified the built node, to avoid leaving the
 	// importer in an inconsistent state when we return an error.
 	stackSize := len(i.stack)
-	switch {
-	case stackSize >= 2 && i.stack[stackSize-1].height < node.height && i.stack[stackSize-2].height < node.height:
-		node.leftNode = i.stack[stackSize-2]
-		node.leftHash = node.leftNode.hash
-		node.rightNode = i.stack[stackSize-1]
-		node.rightHash = node.rightNode.hash
-	case stackSize >= 1 && i.stack[stackSize-1].height < node.height:
-		node.leftNode = i.stack[stackSize-1]
-		node.leftHash = node.leftNode.hash
-	}
-
-	if node.height == 0 {
+	if node.subtreeHeight == 0 {
 		node.size = 1
-	}
-	if node.leftNode != nil {
-		node.size += node.leftNode.size
-	}
-	if node.rightNode != nil {
-		node.size += node.rightNode.size
-	}
+	} else if stackSize >= 2 && i.stack[stackSize-1].subtreeHeight < node.subtreeHeight && i.stack[stackSize-2].subtreeHeight < node.subtreeHeight {
+		leftNode := i.stack[stackSize-2]
+		rightNode := i.stack[stackSize-1]
 
-	_, err := node._hash()
-	if err != nil {
-		return err
-	}
+		node.leftNode = leftNode
+		node.rightNode = rightNode
+		node.leftNodeKey = leftNode.GetKey()
+		node.rightNodeKey = rightNode.GetKey()
+		node.size = leftNode.size + rightNode.size
 
-	err = node.validate()
-	if err != nil {
-		return err
-	}
-
-	buf := bufPool.Get().(*bytes.Buffer)
-	buf.Reset()
-	defer bufPool.Put(buf)
-
-	if err = node.writeBytes(buf); err != nil {
-		return err
-	}
-
-	bytesCopy := make([]byte, buf.Len())
-	copy(bytesCopy, buf.Bytes())
-
-	if err = i.batch.Set(i.tree.ndb.nodeKey(node.hash), bytesCopy); err != nil {
-		return err
-	}
-
-	i.batchSize++
-	if i.batchSize >= maxBatchSize {
-		err = i.batch.Write()
-		if err != nil {
+		// Update the stack now.
+		if err := i.writeNode(leftNode); err != nil {
 			return err
 		}
-		i.batch.Close()
-		i.batch = i.tree.ndb.db.NewBatch()
-		i.batchSize = 0
+		if err := i.writeNode(rightNode); err != nil {
+			return err
+		}
+		i.stack = i.stack[:stackSize-2]
+
+		// remove the recursive references to avoid memory leak
+		leftNode.leftNode = nil
+		leftNode.rightNode = nil
+		rightNode.leftNode = nil
+		rightNode.rightNode = nil
+	}
+	i.nonces[exportNode.Version]++
+	node.nodeKey = &NodeKey{
+		version: exportNode.Version,
+		// Nonce is 1-indexed, but start at 2 since the root node having a nonce of 1.
+		nonce: i.nonces[exportNode.Version] + 1,
 	}
 
-	// Update the stack now that we know there were no errors
-	switch {
-	case node.leftHash != nil && node.rightHash != nil:
-		i.stack = i.stack[:stackSize-2]
-	case node.leftHash != nil || node.rightHash != nil:
-		i.stack = i.stack[:stackSize-1]
-	}
 	i.stack = append(i.stack, node)
 
 	return nil
@@ -171,15 +195,21 @@ func (i *Importer) Commit() error {
 
 	switch len(i.stack) {
 	case 0:
-		if err := i.batch.Set(i.tree.ndb.rootKey(i.version), []byte{}); err != nil {
+		if err := i.batch.Set(i.tree.ndb.nodeKey(GetRootKey(i.version)), []byte{}); err != nil {
 			return err
 		}
 	case 1:
-		if err := i.batch.Set(i.tree.ndb.rootKey(i.version), i.stack[0].hash); err != nil {
+		i.stack[0].nodeKey.nonce = 1
+		if err := i.writeNode(i.stack[0]); err != nil {
 			return err
 		}
+		if i.stack[0].nodeKey.version < i.version { // it means there is no update in the given version
+			if err := i.batch.Set(i.tree.ndb.nodeKey(GetRootKey(i.version)), i.tree.ndb.nodeKeyPrefix(i.stack[0].nodeKey.version)); err != nil {
+				return err
+			}
+		}
 	default:
-		return errors.Errorf("invalid node structure, found stack size %v when committing",
+		return fmt.Errorf("invalid node structure, found stack size %v when committing",
 			len(i.stack))
 	}
 

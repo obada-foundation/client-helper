@@ -1,4 +1,3 @@
-GOTOOLS := github.com/golangci/golangci-lint/cmd/golangci-lint
 VERSION := $(shell echo $(shell git describe --tags) | sed 's/^v//')
 COMMIT := $(shell git log -1 --format='%H')
 BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
@@ -30,27 +29,30 @@ test:
 	@go test ./... $(LDFLAGS) -v 
 .PHONY: test
 
-tools:
-	go get -v $(GOTOOLS)
-.PHONY: tools
-
 format:
 	find . -name '*.go' -type f -not -path "*.git*" -not -name '*.pb.go' -not -name '*pb_test.go' | xargs gofmt -w -s
 	find . -name '*.go' -type f -not -path "*.git*"  -not -name '*.pb.go' -not -name '*pb_test.go' | xargs goimports -format
 .PHONY: format
 
 # look into .golangci.yml for enabling / disabling linters
+golangci_lint_cmd=golangci-lint
+golangci_version=v1.51.2
+
 lint:
 	@echo "--> Running linter"
-	@golangci-lint run
-	@go mod verify
-.PHONY: lint
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golangci_version)
+	@$(golangci_lint_cmd) run --timeout=10m
+
+lint-fix:
+	@echo "--> Running linter"
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golangci_version)
+	@$(golangci_lint_cmd) run --fix --out-format=tab --issues-exit-code=0
 
 # bench is the basic tests that shouldn't crash an aws instance
 bench:
 	cd benchmarks && \
-		go test $(LDFLAGS) -tags cleveldb,rocksdb,boltdb,badgerdb -run=NOTEST -bench=Small . && \
-		go test $(LDFLAGS) -tags cleveldb,rocksdb,boltdb,badgerdb -run=NOTEST -bench=Medium . && \
+		go test $(LDFLAGS) -tags pebbledb -run=NOTEST -bench=Small . && \
+		go test $(LDFLAGS) -tags pebbledb -run=NOTEST -bench=Medium . && \
 		go test $(LDFLAGS) -run=NOTEST -bench=RandomBytes .
 .PHONY: bench
 
@@ -58,9 +60,9 @@ bench:
 fullbench:
 	cd benchmarks && \
 		go test $(LDFLAGS) -run=NOTEST -bench=RandomBytes . && \
-		go test $(LDFLAGS) -tags cleveldb,rocksdb,boltdb,badgerdb -run=NOTEST -bench=Small . && \
-		go test $(LDFLAGS) -tags cleveldb,rocksdb,boltdb,badgerdb -run=NOTEST -bench=Medium . && \
-		go test $(LDFLAGS) -tags cleveldb,rocksdb,boltdb,badgerdb -run=NOTEST -timeout=30m -bench=Large . && \
+		go test $(LDFLAGS) -tags rocksdb,pebbledb -run=NOTEST -bench=Small . && \
+		go test $(LDFLAGS) -tags rocksdb,pebbledb -run=NOTEST -bench=Medium . && \
+		go test $(LDFLAGS) -tags rocksdb,pebbledb -run=NOTEST -timeout=30m -bench=Large . && \
 		go test $(LDFLAGS) -run=NOTEST -bench=Mem . && \
 		go test $(LDFLAGS) -run=NOTEST -timeout=60m -bench=LevelDB .
 .PHONY: fullbench
@@ -87,43 +89,3 @@ exploremem:
 delve:
 	dlv test ./benchmarks -- -test.bench=.
 .PHONY: delve
-
-all: tools
-.PHONY: all
-
-tools: protobuf
-.PHONY: tools
-
-check: check_tools
-.PHONY: check
-
-check_tools:
-	@# https://stackoverflow.com/a/25668869
-	@echo "Found tools: $(foreach tool,$(notdir $(GOTOOLS)),\
-        $(if $(shell which $(tool)),$(tool),$(error "No $(tool) in PATH")))"
-.PHONY: check_tools
-
-tools-clean:
-	rm -f $(CERTSTRAP) $(PROTOBUF) $(GOX) $(GOODMAN)
-	rm -rf /usr/local/include/google/protobuf
-	rm -f /usr/local/bin/protoc
-.PHONY: tooks-clean
-
-###
-# Non Go tools
-###
-
-.PHONY: lint test tools install delve exploremem explorecpu profile fullbench bench proto-gen proto-lint proto-check-breaking
-
-proto-lint:
-	@$(DOCKER_BUF) check lint --error-format=json
-.PHONY: proto-lint
-
-proto-check-breaking:
-	@$(DOCKER_BUF) check breaking --against-input $(HTTPS_GIT)#branch=master
-.PHONY: proto-check-breaking
-
-proto-gen:
-	@echo "Generating Protobuf files"
-	$(DOCKER) run --rm -v $(CURDIR):/workspace --workdir /workspace tendermintdev/sdk-proto-gen:master sh scripts/protocgen.sh
-.PHONY: proto-gen-d

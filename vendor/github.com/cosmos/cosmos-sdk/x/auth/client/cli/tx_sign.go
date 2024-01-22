@@ -11,7 +11,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
 )
 
@@ -19,7 +18,6 @@ const (
 	flagMultisig        = "multisig"
 	flagOverwrite       = "overwrite"
 	flagSigOnly         = "signature-only"
-	flagAmino           = "amino"
 	flagNoAutoIncrement = "no-auto-increment"
 	flagAppend          = "append"
 )
@@ -56,7 +54,6 @@ account key. It implies --signature-only.
 	cmd.Flags().String(flagMultisig, "", "Address or key name of the multisig account on behalf of which the transaction shall be signed")
 	cmd.Flags().String(flags.FlagOutputDocument, "", "The document will be written to the given file instead of STDOUT")
 	cmd.Flags().Bool(flagSigOnly, false, "Print only the generated signature, then exit")
-	cmd.Flags().String(flags.FlagChainID, "", "network chain ID")
 	cmd.Flags().Bool(flagAppend, false, "Combine all message and generate single signed transaction for broadcast.")
 
 	flags.AddTxFlagsToCmd(cmd)
@@ -72,7 +69,10 @@ func makeSignBatchCmd() func(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		txFactory := tx.NewFactoryCLI(clientCtx, cmd.Flags())
+		txFactory, err := tx.NewFactoryCLI(clientCtx, cmd.Flags())
+		if err != nil {
+			return err
+		}
 		txCfg := clientCtx.TxConfig
 		printSignatureOnly, _ := cmd.Flags().GetBool(flagSigOnly)
 
@@ -121,7 +121,8 @@ func makeSignBatchCmd() func(cmd *cobra.Command, args []string) error {
 		appendMessagesToSingleTx, _ := cmd.Flags().GetBool(flagAppend)
 		// Combines all tx msgs and create single signed transaction
 		if appendMessagesToSingleTx {
-			txBuilder := clientCtx.TxConfig.NewTxBuilder()
+			var totalFees sdk.Coins
+			txBuilder := txCfg.NewTxBuilder()
 			msgs := make([]sdk.Msg, 0)
 			newGasLimit := uint64(0)
 
@@ -133,6 +134,13 @@ func makeSignBatchCmd() func(cmd *cobra.Command, args []string) error {
 				}
 				// increment the gas
 				newGasLimit += fe.GetTx().GetGas()
+				// Individual fee values from each transaction need to be
+				// aggregated to calculate the total fee for the batch of transactions.
+				// https://github.com/cosmos/cosmos-sdk/issues/18064
+				unmergedFees := fe.GetTx().GetFee()
+				for _, fee := range unmergedFees {
+					totalFees = totalFees.Add(fee)
+				}
 				// append messages
 				msgs = append(msgs, unsignedStdTx.GetMsgs()...)
 			}
@@ -141,12 +149,14 @@ func makeSignBatchCmd() func(cmd *cobra.Command, args []string) error {
 
 			// set the memo,fees,feeGranter,feePayer from cmd flags
 			txBuilder.SetMemo(txFactory.Memo())
-			txBuilder.SetFeeAmount(txFactory.Fees())
 			txBuilder.SetFeeGranter(clientCtx.FeeGranter)
 			txBuilder.SetFeePayer(clientCtx.FeePayer)
 
 			// set the gasLimit
 			txBuilder.SetGasLimit(newGasLimit)
+
+			// set the feeAmount
+			txBuilder.SetFeeAmount(totalFees)
 
 			// sign the txs
 			if ms == "" {
@@ -282,8 +292,6 @@ be generated via the 'multisign' command.
 	cmd.Flags().Bool(flagOverwrite, false, "Overwrite existing signatures with a new one. If disabled, new signature will be appended")
 	cmd.Flags().Bool(flagSigOnly, false, "Print only the signatures")
 	cmd.Flags().String(flags.FlagOutputDocument, "", "The document will be written to the given file instead of STDOUT")
-	cmd.Flags().String(flags.FlagChainID, "", "The network chain ID")
-	cmd.Flags().Bool(flagAmino, false, "Generate Amino encoded JSON suitable for submiting to the txs REST endpoint")
 	flags.AddTxFlagsToCmd(cmd)
 
 	cmd.MarkFlagRequired(flags.FlagFrom)
@@ -398,16 +406,6 @@ func signTx(cmd *cobra.Command, clientCtx client.Context, txF tx.Factory, newTx 
 		return err
 	}
 
-	aminoJSON, err := f.GetBool(flagAmino)
-	if err != nil {
-		return err
-	}
-
-	bMode, err := f.GetString(flags.FlagBroadcastMode)
-	if err != nil {
-		return err
-	}
-
 	// set output
 	closeFunc, err := setOutputFile(cmd)
 	if err != nil {
@@ -418,24 +416,9 @@ func signTx(cmd *cobra.Command, clientCtx client.Context, txF tx.Factory, newTx 
 	clientCtx.WithOutput(cmd.OutOrStdout())
 
 	var json []byte
-	if aminoJSON {
-		stdTx, err := tx.ConvertTxToStdTx(clientCtx.LegacyAmino, txBuilder.GetTx())
-		if err != nil {
-			return err
-		}
-		req := BroadcastReq{
-			Tx:   stdTx,
-			Mode: bMode,
-		}
-		json, err = clientCtx.LegacyAmino.MarshalJSON(req)
-		if err != nil {
-			return err
-		}
-	} else {
-		json, err = marshalSignatureJSON(txCfg, txBuilder, printSignatureOnly)
-		if err != nil {
-			return err
-		}
+	json, err = marshalSignatureJSON(txCfg, txBuilder, printSignatureOnly)
+	if err != nil {
+		return err
 	}
 
 	cmd.Printf("%s\n", json)

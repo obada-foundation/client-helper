@@ -16,8 +16,10 @@ var (
 	// errInternal should never be exposed, but we reserve this code for non-specified errors
 	errInternal = Register(UndefinedCodespace, 1, "internal")
 
-	// ErrPanic is only set when we recover from a panic, so we know to
-	// redact potentially sensitive system info
+	// ErrStopIterating is used to break out of an iteration
+	ErrStopIterating = Register(UndefinedCodespace, 2, "stop iterating")
+
+	// ErrPanic should only be set when we recovering from a panic
 	ErrPanic = Register(UndefinedCodespace, 111222, "panic")
 )
 
@@ -282,6 +284,9 @@ func WithType(err error, obj interface{}) error {
 // IsOf checks if a received error is caused by one of the target errors.
 // It extends the errors.Is functionality to a list of errors.
 func IsOf(received error, targets ...error) bool {
+	if received == nil {
+		return false
+	}
 	for _, t := range targets {
 		if errors.Is(received, t) {
 			return true

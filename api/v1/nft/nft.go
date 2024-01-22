@@ -10,6 +10,10 @@ import (
 	"github.com/obada-foundation/client-helper/services/blockchain"
 	"github.com/obada-foundation/client-helper/services/device"
 	"github.com/obada-foundation/client-helper/system/web"
+	regapi "github.com/obada-foundation/registry/api"
+	pbacc "github.com/obada-foundation/registry/api/pb/v1/account"
+	"github.com/obada-foundation/registry/api/pb/v1/diddoc"
+	registry "github.com/obada-foundation/registry/client"
 )
 
 // Handlers holds dependencies
@@ -17,6 +21,7 @@ type Handlers struct {
 	AccountSvc    *account.Service
 	DeviceSvc     *device.Service
 	BlockchainSvc *blockchain.Service
+	Registry      registry.Client
 }
 
 // NFT reponds NFT
@@ -108,6 +113,54 @@ func (h Handlers) Transfer(ctx context.Context, w http.ResponseWriter, r *http.R
 	}
 
 	if err := h.BlockchainSvc.TransferNFT(ctx, d.DID, req.ReceiverArr, privKey); err != nil {
+		return err
+	}
+
+	resp, err := h.Registry.GetPublicKey(ctx, &pbacc.GetPublicKeyRequest{
+		Address: req.ReceiverArr,
+	})
+	if err != nil {
+		return err
+	}
+
+	DIDDoc, err := h.Registry.Get(ctx, &diddoc.GetRequest{Did: d.DID})
+	if err != nil {
+		return err
+	}
+
+	vms := make([]*diddoc.VerificationMethod, 0)
+	authId := fmt.Sprintf("%s#keys-1", d.DID)
+
+	for _, doc := range DIDDoc.GetDocument().GetVerificationMethod() {
+		if doc.GetId() == authId {
+			doc.PublicKeyBase58 = resp.GetPubkey()
+		}
+
+		vms = append(vms, doc)
+	}
+
+	data := &diddoc.MsgSaveVerificationMethods_Data{
+		Did:                 d.DID,
+		AuthenticationKeyId: authId,
+		Authentication:      DIDDoc.Document.Authentication,
+		VerificationMethods: vms,
+	}
+
+	hash, err := regapi.ProtoDeterministicChecksum(data)
+	if err != nil {
+		return err
+	}
+
+	signature, err := privKey.Sign(hash[:])
+	if err != nil {
+		return err
+	}
+
+	_, err = h.Registry.SaveVerificationMethods(ctx, &diddoc.MsgSaveVerificationMethods{
+		Data:      data,
+		Signature: signature,
+	})
+	if err != nil {
 		return err
 	}
 

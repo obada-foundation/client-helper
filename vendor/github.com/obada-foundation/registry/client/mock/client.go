@@ -170,3 +170,23 @@ func (mr *MockClientMockRecorder) SaveMetadata(ctx, in interface{}, opts ...inte
 	varargs := append([]interface{}{ctx, in}, opts...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveMetadata", reflect.TypeOf((*MockClient)(nil).SaveMetadata), varargs...)
 }
+
+// SaveVerificationMethods mocks base method.
+func (m *MockClient) SaveVerificationMethods(ctx context.Context, in *diddoc.MsgSaveVerificationMethods, opts ...grpc.CallOption) (*diddoc.SaveVerificationMethodsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SaveVerificationMethods", varargs...)
+	ret0, _ := ret[0].(*diddoc.SaveVerificationMethodsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SaveVerificationMethods indicates an expected call of SaveVerificationMethods.
+func (mr *MockClientMockRecorder) SaveVerificationMethods(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveVerificationMethods", reflect.TypeOf((*MockClient)(nil).SaveVerificationMethods), varargs...)
+}

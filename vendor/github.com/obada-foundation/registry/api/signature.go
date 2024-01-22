@@ -4,20 +4,23 @@ import (
 	"crypto/sha256"
 	"sort"
 
-	"github.com/golang/protobuf/jsonpb"
-	pbdiddoc "github.com/obada-foundation/registry/api/pb/v1/diddoc"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
-func MetadataDeterministicChecksum(data *pbdiddoc.SaveMetadataRequest_Data) ([32]byte, error) {
-	marshaler := jsonpb.Marshaler{OrigName: true}
-	jsonString, err := marshaler.MarshalToString(data)
-
+// ProtoDeterministicChecksum returns a deterministic checksum of the given proto message.
+func ProtoDeterministicChecksum(m proto.Message) ([32]byte, error) {
+	marshaler := protojson.MarshalOptions{
+		Indent:          "  ",
+		UseProtoNames:   true,
+		EmitUnpopulated: true,
+	}
+	sortedBytes, err := marshaler.Marshal(m)
 	if err != nil {
 		return [32]byte{}, err
 	}
 
 	// Sort the JSON bytes
-	sortedBytes := []byte(jsonString)
 	sort.Slice(sortedBytes, func(i, j int) bool {
 		return sortedBytes[i] < sortedBytes[j]
 	})

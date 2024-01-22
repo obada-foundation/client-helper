@@ -20,7 +20,7 @@ import (
 	ipfssh "github.com/obada-foundation/client-helper/system/ipfs"
 	"github.com/obada-foundation/client-helper/system/validate"
 	"github.com/obada-foundation/fullcore/x/obit/types"
-	"github.com/obada-foundation/registry/api"
+	regapi "github.com/obada-foundation/registry/api"
 	"github.com/obada-foundation/registry/api/pb/v1/diddoc"
 	"github.com/obada-foundation/registry/client"
 	regtypes "github.com/obada-foundation/registry/types"
@@ -176,9 +176,12 @@ func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice, pk cryptotypes.P
 		return device, err
 	}
 
+	verifyMethodID := fmt.Sprintf("%s#keys-1", DID.String())
+
 	_, err = ds.registry.Get(ctx, &diddoc.GetRequest{
 		Did: DID.String(),
 	})
+
 	if err != nil {
 		er, ok := status.FromError(err)
 		if !ok {
@@ -189,14 +192,13 @@ func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice, pk cryptotypes.P
 			return device, err
 		}
 
-		verifyMethodID := fmt.Sprintf("%s#keys-1", DID.String())
-
 		// Register DID in OBADA registry
 		_, erReg := ds.registry.Register(ctx, &diddoc.RegisterRequest{
 			Did: DID.String(),
 			VerificationMethod: append(make([]*diddoc.VerificationMethod, 0, 1), &diddoc.VerificationMethod{
 				Id:              verifyMethodID,
 				Type:            regtypes.Ed25519VerificationKey2018JSONLD,
+				Controller:      DID.String(),
 				PublicKeyBase58: base58.Encode(pk.PubKey().Bytes()),
 			}),
 			Authentication: []string{
@@ -233,11 +235,15 @@ func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice, pk cryptotypes.P
 	}
 
 	data := &diddoc.SaveMetadataRequest_Data{
-		Did:     DID.String(),
-		Objects: objs,
+		Did:                 DID.String(),
+		AuthenticationKeyId: verifyMethodID,
+		Objects:             objs,
 	}
 
-	hash, err := api.MetadataDeterministicChecksum(data)
+	hash, err := regapi.ProtoDeterministicChecksum(data)
+	if err != nil {
+		return device, err
+	}
 
 	signature, err := pk.Sign(hash[:])
 	if err != nil {

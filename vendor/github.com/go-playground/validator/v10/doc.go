@@ -146,7 +146,7 @@ use the UTF-8 hex representation 0x7C, which is replaced in the code as a pipe,
 so the above will become excludesall=0x7C
 
 	type Test struct {
-		Field `validate:"excludesall=|"`    // BAD! Do not include a a pipe!
+		Field `validate:"excludesall=|"`    // BAD! Do not include a pipe!
 		Field `validate:"excludesall=0x7C"` // GOOD! Use the UTF-8 hex representation.
 	}
 
@@ -194,6 +194,13 @@ such as min or max won't run, but if a value is set validation will run.
 
 	Usage: omitempty
 
+# Omit Nil
+
+Allows to skip the validation if the value is nil (same as omitempty, but
+only for the nil-values).
+
+	Usage: omitnil
+
 # Dive
 
 This tells the validator to dive into a slice, array or map and validate that
@@ -239,7 +246,7 @@ Example #2
 
 	map[[2]string]string with validation tag "gt=0,dive,keys,dive,eq=1|eq=2,endkeys,required"
 	// gt=0 will be applied to the map itself
-	// eq=1|eq=2 will be applied to each array element in the the map keys
+	// eq=1|eq=2 will be applied to each array element in the map keys
 	// required will be applied to map values
 
 # Required
@@ -247,7 +254,7 @@ Example #2
 This validates that the value is not the data types default zero value.
 For numbers ensures value is not zero. For strings ensures value is
 not "". For slices, maps, pointers, interfaces, channels and functions
-ensures the value is not nil.
+ensures the value is not nil. For structs ensures value is not the zero value when using WithRequiredStructEnabled.
 
 	Usage: required
 
@@ -256,7 +263,7 @@ ensures the value is not nil.
 The field under validation must be present and not empty only if all
 the other specified fields are equal to the value following the specified
 field. For strings ensures value is not "". For slices, maps, pointers,
-interfaces, channels and functions ensures the value is not nil.
+interfaces, channels and functions ensures the value is not nil. For structs ensures value is not the zero value.
 
 	Usage: required_if
 
@@ -273,7 +280,7 @@ Examples:
 The field under validation must be present and not empty unless all
 the other specified fields are equal to the value following the specified
 field. For strings ensures value is not "". For slices, maps, pointers,
-interfaces, channels and functions ensures the value is not nil.
+interfaces, channels and functions ensures the value is not nil. For structs ensures value is not the zero value.
 
 	Usage: required_unless
 
@@ -290,7 +297,7 @@ Examples:
 The field under validation must be present and not empty only if any
 of the other specified fields are present. For strings ensures value is
 not "". For slices, maps, pointers, interfaces, channels and functions
-ensures the value is not nil.
+ensures the value is not nil. For structs ensures value is not the zero value.
 
 	Usage: required_with
 
@@ -307,7 +314,7 @@ Examples:
 The field under validation must be present and not empty only if all
 of the other specified fields are present. For strings ensures value is
 not "". For slices, maps, pointers, interfaces, channels and functions
-ensures the value is not nil.
+ensures the value is not nil. For structs ensures value is not the zero value.
 
 	Usage: required_with_all
 
@@ -321,7 +328,7 @@ Example:
 The field under validation must be present and not empty only when any
 of the other specified fields are not present. For strings ensures value is
 not "". For slices, maps, pointers, interfaces, channels and functions
-ensures the value is not nil.
+ensures the value is not nil. For structs ensures value is not the zero value.
 
 	Usage: required_without
 
@@ -338,7 +345,7 @@ Examples:
 The field under validation must be present and not empty only when all
 of the other specified fields are not present. For strings ensures value is
 not "". For slices, maps, pointers, interfaces, channels and functions
-ensures the value is not nil.
+ensures the value is not nil. For structs ensures value is not the zero value.
 
 	Usage: required_without_all
 
@@ -352,7 +359,7 @@ Example:
 The field under validation must not be present or not empty only if all
 the other specified fields are equal to the value following the specified
 field. For strings ensures value is not "". For slices, maps, pointers,
-interfaces, channels and functions ensures the value is not nil.
+interfaces, channels and functions ensures the value is not nil. For structs ensures value is not the zero value.
 
 	Usage: excluded_if
 
@@ -369,7 +376,7 @@ Examples:
 The field under validation must not be present or empty unless all
 the other specified fields are equal to the value following the specified
 field. For strings ensures value is not "". For slices, maps, pointers,
-interfaces, channels and functions ensures the value is not nil.
+interfaces, channels and functions ensures the value is not nil. For structs ensures value is not the zero value.
 
 	Usage: excluded_unless
 
@@ -863,7 +870,6 @@ This validates that a string value is a valid JWT
 
 	Usage: jwt
 
-
 # File
 
 This validates that a string value contains a valid file path and that
@@ -872,6 +878,13 @@ This is done using os.Stat, which is a platform independent function.
 
 	Usage: file
 
+# Image path
+
+This validates that a string value contains a valid file path and that
+the file exists on the machine and is an image.
+This is done using os.Stat and github.com/gabriel-vasile/mimetype
+
+	Usage: image
 
 # File Path
 
@@ -880,7 +893,6 @@ validate the existence of that file.
 This is done using os.Stat, which is a platform independent function.
 
 	Usage: filepath
-
 
 # URL String
 
@@ -916,24 +928,22 @@ this with the omitempty tag.
 # Base64URL String
 
 This validates that a string value contains a valid base64 URL safe value
-according the the RFC4648 spec.
+according the RFC4648 spec.
 Although an empty string is a valid base64 URL safe value, this will report
 an empty string as an error, if you wish to accept an empty string as valid
 you can use this with the omitempty tag.
 
 	Usage: base64url
-
 
 # Base64RawURL String
 
 This validates that a string value contains a valid base64 URL safe value,
-but without = padding, according the the RFC4648 spec, section 3.2.
+but without = padding, according the RFC4648 spec, section 3.2.
 Although an empty string is a valid base64 URL safe value, this will report
 an empty string as an error, if you wish to accept an empty string as valid
 you can use this with the omitempty tag.
 
 	Usage: base64url
-
 
 # Bitcoin Address
 
@@ -1267,7 +1277,6 @@ This is done using os.Stat, which is a platform independent function.
 
 	Usage: dir
 
-
 # Directory Path
 
 This validates that a string value contains a valid directory but does
@@ -1277,7 +1286,6 @@ It is safest to suffix the string with os.PathSeparator if the directory
 may not exist at the time of validation.
 
 	Usage: dirpath
-
 
 # HostPort
 
@@ -1350,7 +1358,6 @@ More information on https://semver.org/
 
 	Usage: semver
 
-
 # CVE Identifier
 
 This validates that a string value is a valid cve id, defined in cve mitre.
@@ -1358,27 +1365,23 @@ More information on https://cve.mitre.org/
 
 	Usage: cve
 
-
 # Credit Card
 
-This validates that a string value contains a valid credit card number using Luhn algoritm.
+This validates that a string value contains a valid credit card number using Luhn algorithm.
 
 	Usage: credit_card
 
-
 # Luhn Checksum
 
-  	Usage: luhn_checksum
+	Usage: luhn_checksum
 
 This validates that a string or (u)int value contains a valid checksum using the Luhn algorithm.
 
-
-#MongoDb ObjectID
+# MongoDb ObjectID
 
 This validates that a string is a valid 24 character hexadecimal string.
 
-  Usage: mongodb
-
+	Usage: mongodb
 
 # Cron
 
@@ -1386,7 +1389,13 @@ This validates that a string value contains a valid cron expression.
 
 	Usage: cron
 
-Alias Validators and Tags
+# SpiceDb ObjectID/Permission/Object Type
+
+This validates that a string is valid for use with SpiceDb for the indicated purpose. If no purpose is given, a purpose of 'id' is assumed.
+
+	Usage: spicedb=id|permission|type
+
+# Alias Validators and Tags
 
 Alias Validators and Tags
 NOTE: When returning an error, the tag returned in "FieldError" will be

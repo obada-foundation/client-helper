@@ -7,7 +7,7 @@ RUN go mod download -x
 
 COPY . .
 
-RUN CGO_ENABLED=0 go build -tags=badgerdb -o /client-helper main.go
+RUN CGO_ENABLED=0 go build -a -ldflags '-s -X "google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=warn"'  -tags=badgerdb -o /client-helper main.go
 
 FROM alpine:3.14
 

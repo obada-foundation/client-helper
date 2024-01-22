@@ -111,11 +111,10 @@ func (em EventManager) accountCreatedHandler(ctx context.Context, e bus.Event) {
 				Pubkey: base58.Encode(pubKey.Bytes()),
 			}
 
-			if _, err := em.registry.RegisterAccount(ctx, msg); err != nil {
-				em.logger.Errorw("failed to register account in the registry", "EVENT", events.AccountCreated, "address", accAddress, "error", err)
-			}
-
-			if err == nil {
+			_, err := em.registry.RegisterAccount(ctx, msg)
+			if err != nil {
+				em.logger.Errorw("failed to register account in the registry", "EVENT", events.AccountCreated, "address", accAddress, "error", er)
+			} else {
 				em.logger.Infow("added to the registry", "EVENT", events.AccountCreated, "account address", accAddress)
 			}
 		}

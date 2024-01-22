@@ -5,15 +5,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	pb "github.com/obada-foundation/registry/api/pb/v1/diddoc"
 	"github.com/obada-foundation/registry/services/diddoc"
 	"github.com/obada-foundation/registry/types"
 	"github.com/obada-foundation/sdkgo/asset"
-	"github.com/obada-foundation/sdkgo/base58"
 	sdkdid "github.com/obada-foundation/sdkgo/did"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 // Get DID document from the registry
@@ -108,58 +108,68 @@ func (s GRPCServer) Register(ctx context.Context, msg *pb.RegisterRequest) (*pb.
 	return resp, nil
 }
 
+func (s GRPCServer) checkSignature(pubKey cryptotypes.PubKey, sig []byte, msg proto.Message) error {
+	if len(sig) == 0 {
+		return status.Errorf(codes.InvalidArgument, "empty signature")
+	}
+
+	hash, err := ProtoDeterministicChecksum(msg)
+	if err != nil {
+		return err
+	}
+
+	if pubKey.VerifySignature(hash[:], sig) {
+		return nil
+	}
+
+	return status.Errorf(codes.Unauthenticated, "unauthorized")
+}
+
 // SaveMetadata updates metadata for DID
 func (s GRPCServer) SaveMetadata(ctx context.Context, msg *pb.SaveMetadataRequest) (*pb.SaveMetadataResponse, error) {
 	resp := &pb.SaveMetadataResponse{}
 
-	if len(msg.GetSignature()) == 0 {
-		return nil, status.Errorf(codes.PermissionDenied, "unauthorized")
-	}
-
 	data := msg.GetData()
 
-	DIDDoc, err := s.checkIfRegistered(ctx, data.GetDid())
-	if err != nil {
-		return resp, err
+	if len(msg.GetSignature()) == 0 {
+		return resp, status.Errorf(codes.InvalidArgument, "empty signature")
 	}
 
-	hash, err := MetadataDeterministicChecksum(data)
-	if err != nil {
-		return resp, err
+	if data.GetAuthenticationKeyId() == "" {
+		return resp, status.Errorf(codes.InvalidArgument, "empty autherntication id")
 	}
 
-	for _, authKey := range DIDDoc.Authentication {
-		for _, method := range DIDDoc.VerificationMethod {
-			if method.ID == authKey && method.PublicKeyBase58 != "" {
-				pubKey := secp256k1.PubKey{
-					Key: base58.Decode(method.PublicKeyBase58),
-				}
-
-				if pubKey.VerifySignature(hash[:], msg.GetSignature()) {
-					objects := make([]asset.Object, 0, len(data.GetObjects()))
-
-					for _, obj := range data.GetObjects() {
-						objects = append(objects, asset.Object{
-							URL:                     obj.GetUrl(),
-							HashEncryptedDataObject: obj.GetHashEncryptedDataObject(),
-							HashUnencryptedObject:   obj.GetHashUnencryptedObject(),
-							Metadata:                obj.GetMetadata(),
-							HashUnencryptedMetadata: obj.GetHashUnencryptedMetadata(),
-							HashEncryptedMetadata:   obj.GetHashEncryptedMetadata(),
-						})
-					}
-
-					if err := s.DIDDocService.SaveMetadata(ctx, data.GetDid(), objects); err != nil {
-						return resp, err
-					}
-
-					return resp, nil
-				}
-			}
+	pubKey, err := s.DIDDocService.GetVerificationKeyByAuthID(ctx, data.GetDid(), data.GetAuthenticationKeyId())
+	if err != nil {
+		if errors.Is(err, diddoc.ErrDIDNotRegistered) {
+			return nil, status.Errorf(codes.NotFound, err.Error())
 		}
+
+		return resp, err
 	}
 
-	return nil, status.Errorf(codes.PermissionDenied, "unauthorized")
+	if err := s.checkSignature(pubKey, msg.GetSignature(), data); err != nil {
+		return resp, err
+	}
+
+	objects := make([]asset.Object, 0, len(data.GetObjects()))
+
+	for _, obj := range data.GetObjects() {
+		objects = append(objects, asset.Object{
+			URL:                     obj.GetUrl(),
+			HashEncryptedDataObject: obj.GetHashEncryptedDataObject(),
+			HashUnencryptedObject:   obj.GetHashUnencryptedObject(),
+			Metadata:                obj.GetMetadata(),
+			HashUnencryptedMetadata: obj.GetHashUnencryptedMetadata(),
+			HashEncryptedMetadata:   obj.GetHashEncryptedMetadata(),
+		})
+	}
+
+	if err := s.DIDDocService.SaveMetadata(ctx, data.GetDid(), objects); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
 }
 
 // GetMetadataHistory returns historical records of metadata changes
@@ -213,4 +223,50 @@ func (s GRPCServer) checkIfRegistered(ctx context.Context, did string) (*types.D
 	}
 
 	return &didDoc, nil
+}
+
+// SaveVerificationMethods saves verification methods for DID
+func (s GRPCServer) SaveVerificationMethods(ctx context.Context, msg *pb.MsgSaveVerificationMethods) (*pb.SaveVerificationMethodsResponse, error) {
+	resp := &pb.SaveVerificationMethodsResponse{}
+
+	data := msg.GetData()
+
+	if len(msg.GetSignature()) == 0 {
+		return resp, status.Errorf(codes.InvalidArgument, "empty signature")
+	}
+
+	if data.GetAuthenticationKeyId() == "" {
+		return resp, status.Errorf(codes.InvalidArgument, "empty autherntication id")
+	}
+
+	pubKey, err := s.DIDDocService.GetVerificationKeyByAuthID(ctx, data.GetDid(), data.GetAuthenticationKeyId())
+	if err != nil {
+		if errors.Is(err, diddoc.ErrDIDNotRegistered) {
+			return nil, status.Errorf(codes.NotFound, err.Error())
+		}
+
+		return resp, err
+	}
+
+	if err := s.checkSignature(pubKey, msg.GetSignature(), data); err != nil {
+		return resp, err
+	}
+
+	vms := make([]types.VerificationMethod, 0, len(data.GetVerificationMethods()))
+
+	for _, vm := range data.GetVerificationMethods() {
+		vms = append(vms, types.VerificationMethod{
+			Context:         vm.GetContext(),
+			ID:              vm.GetId(),
+			Type:            vm.GetType(),
+			Controller:      vm.GetController(),
+			PublicKeyBase58: vm.GetPublicKeyBase58(),
+		})
+	}
+
+	if err := s.DIDDocService.SaveVerificationMethods(ctx, data.GetDid(), vms, data.GetAuthentication()); err != nil {
+		return resp, err
+	}
+
+	return resp, nil
 }

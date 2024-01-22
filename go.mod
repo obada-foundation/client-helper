@@ -21,9 +21,9 @@ require (
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/mustafaturan/bus/v3 v3.0.3
 	github.com/mustafaturan/monoton/v3 v3.0.0
-	github.com/obada-foundation/common v0.0.0-20230405225442-b8cc8dc633b0
+	github.com/obada-foundation/common v0.0.0-20230520215448-087575da4fe9
 	github.com/obada-foundation/fullcore v0.0.1
-	github.com/obada-foundation/registry v0.0.0-20230520211433-39fb2b9c3f05
+	github.com/obada-foundation/registry v0.0.0-20230523111939-df1c81d1ebb8
 	github.com/obada-foundation/sdkgo v0.0.0-20230403194530-a92fc0ab68a1
 	github.com/open-policy-agent/opa v0.48.0
 	github.com/pkg/errors v0.9.1

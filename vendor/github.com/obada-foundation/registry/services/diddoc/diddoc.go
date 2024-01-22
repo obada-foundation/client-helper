@@ -7,9 +7,12 @@ import (
 	"strings"
 
 	immudb "github.com/codenotary/immudb/pkg/client"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/obada-foundation/registry/system/encoder"
 	"github.com/obada-foundation/registry/types"
 	"github.com/obada-foundation/sdkgo/asset"
+	"github.com/obada-foundation/sdkgo/base58"
 	sdkdid "github.com/obada-foundation/sdkgo/did"
 	"go.uber.org/zap"
 )
@@ -27,6 +30,12 @@ type DIDDoc interface {
 
 	// SaveMetadata saves metadata to the registry
 	SaveMetadata(ctx context.Context, did string, m []asset.Object) error
+
+	// SaveVerificationMethods saves verification methods for patrticular DID
+	SaveVerificationMethods(ctx context.Context, did string, vms []types.VerificationMethod, a []string) error
+
+	// GetVerificationKeyByAuthID returns verification key by authentification ID
+	GetVerificationKeyByAuthID(ctx context.Context, did, authID string) (cryptotypes.PubKey, error)
 }
 
 // Service implements DIDDoc
@@ -99,6 +108,36 @@ func (s Service) SaveMetadata(ctx context.Context, did string, m []asset.Object)
 	return nil
 }
 
+// SaveVerificationMethods implements DIDDoc SaveVerificationMethods
+func (s Service) SaveVerificationMethods(ctx context.Context, did string, vms []types.VerificationMethod, a []string) error {
+	DID, err := sdkdid.FromString(did, nil)
+	if err != nil {
+		return err
+	}
+
+	DIDDoc, err := s.Get(ctx, DID.String())
+	if err != nil {
+		return ErrDIDNotRegistered
+	}
+
+	DIDDoc.VerificationMethod = vms
+	DIDDoc.Authentication = a
+
+	gobData, err := encoder.DataEncode(DIDDoc)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Set(ctx, []byte(DID.String()), gobData)
+	if err != nil {
+		return err
+	}
+
+	s.logger.Debugf("verification methods are updated for DID: %q", DID)
+
+	return nil
+}
+
 // Register implements DIDDoc Register
 func (s Service) Register(ctx context.Context, did string, vm []types.VerificationMethod, a []string) error {
 	DID, err := sdkdid.FromString(did, nil)
@@ -128,6 +167,30 @@ func (s Service) Register(ctx context.Context, did string, vm []types.Verificati
 	s.logger.Debugf("New DID registered: %q", DID)
 
 	return nil
+}
+
+// GetVerificationKeyByAuthID implements DIDDoc GetVerificationKeyByAuthID
+func (s Service) GetVerificationKeyByAuthID(ctx context.Context, did, authID string) (cryptotypes.PubKey, error) {
+	DIDDoc, err := s.Get(ctx, did)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ak := range DIDDoc.Authentication {
+		if ak == authID {
+			for _, method := range DIDDoc.VerificationMethod {
+				if method.ID == authID {
+					pubKey := secp256k1.PubKey{
+						Key: base58.Decode(method.PublicKeyBase58),
+					}
+
+					return &pubKey, nil
+				}
+			}
+		}
+	}
+
+	return nil, ErrVerificationKeyNotFound
 }
 
 // Get implements DIDDoc Get

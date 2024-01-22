@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"errors"
 
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/cosmos/cosmos-db"
 )
 
 type traversal struct {
@@ -76,19 +76,19 @@ func (nodes *delayedNodes) length() int {
 // 1. If it is not an delayed node (node.delayed == false) it immediately returns it.
 //
 // A. If the `node` is a branch node:
-// 1. If the traversal is postorder, then append the current node to the t.delayedNodes,
-//    with `delayed` set to false. This makes the current node returned *after* all the children
-//    are traversed, without being expanded.
-// 2. Append the traversable children nodes into the `delayedNodes`, with `delayed` set to true. This
-//    makes the children nodes to be traversed, and expanded with their respective children.
-// 3. If the traversal is preorder, (with the children to be traversed already pushed to the
-//    `delayedNodes`), returns the current node.
-// 4. Call `traversal.next()` to further traverse through the `delayedNodes`.
+//  1. If the traversal is postorder, then append the current node to the t.delayedNodes,
+//     with `delayed` set to false. This makes the current node returned *after* all the children
+//     are traversed, without being expanded.
+//  2. Append the traversable children nodes into the `delayedNodes`, with `delayed` set to true. This
+//     makes the children nodes to be traversed, and expanded with their respective children.
+//  3. If the traversal is preorder, (with the children to be traversed already pushed to the
+//     `delayedNodes`), returns the current node.
+//  4. Call `traversal.next()` to further traverse through the `delayedNodes`.
 //
 // B. If the `node` is a leaf node, it will be returned without expand, by the following process:
-// 1. If the traversal is postorder, the current node will be append to the `delayedNodes` with `delayed`
-//    set to false, and immediately returned at the subsequent call of `traversal.next()` at the last line.
-// 2. If the traversal is preorder, the current node will be returned.
+//  1. If the traversal is postorder, the current node will be append to the `delayedNodes` with `delayed`
+//     set to false, and immediately returned at the subsequent call of `traversal.next()` at the last line.
+//  2. If the traversal is preorder, the current node will be returned.
 func (t *traversal) next() (*Node, error) {
 	// End of traversal.
 	if t.delayedNodes.length() == 0 {
@@ -235,7 +235,7 @@ func (iter *Iterator) Next() {
 		return
 	}
 
-	if node.height == 0 {
+	if node.subtreeHeight == 0 {
 		iter.key, iter.value = node.key, node.value
 		return
 	}
@@ -268,15 +268,15 @@ type NodeIterator struct {
 }
 
 // NewNodeIterator returns a new NodeIterator to traverse the tree of the root node.
-func NewNodeIterator(root []byte, ndb *nodeDB) (*NodeIterator, error) {
-	if len(root) == 0 {
+func NewNodeIterator(rootKey []byte, ndb *nodeDB) (*NodeIterator, error) {
+	if len(rootKey) == 0 {
 		return &NodeIterator{
 			nodesToVisit: []*Node{},
 			ndb:          ndb,
 		}, nil
 	}
 
-	node, err := ndb.GetNode(root)
+	node, err := ndb.GetNode(rootKey)
 	if err != nil {
 		return nil, err
 	}
@@ -319,15 +319,17 @@ func (iter *NodeIterator) Next(isSkipped bool) {
 		return
 	}
 
-	leftNode, err := iter.ndb.GetNode(node.leftHash)
+	rightNode, err := iter.ndb.GetNode(node.rightNodeKey)
 	if err != nil {
 		iter.err = err
 		return
 	}
-	rightNode, err := iter.ndb.GetNode(node.rightHash)
+	iter.nodesToVisit = append(iter.nodesToVisit, rightNode)
+
+	leftNode, err := iter.ndb.GetNode(node.leftNodeKey)
 	if err != nil {
 		iter.err = err
 		return
 	}
-	iter.nodesToVisit = append(iter.nodesToVisit, rightNode, leftNode)
+	iter.nodesToVisit = append(iter.nodesToVisit, leftNode)
 }

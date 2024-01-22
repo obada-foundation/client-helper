@@ -79,6 +79,7 @@ func Routes(app *web.App, cfg Config) {
 		AccountSvc:    cfg.AccountSvc,
 		DeviceSvc:     cfg.DeviceSvc,
 		BlockchainSvc: cfg.BlockchainSvc,
+		Registry:      cfg.Registry,
 	}
 
 	app.Handle(http.MethodGet, version, "/nft/:key", nftGrp.NFT, authenticate)

@@ -26,6 +26,7 @@ type DIDDocClient interface {
 	Get(ctx context.Context, in *GetRequest, opts ...grpc.CallOption) (*GetResponse, error)
 	GetMetadataHistory(ctx context.Context, in *GetMetadataHistoryRequest, opts ...grpc.CallOption) (*GetMetadataHistoryResponse, error)
 	SaveMetadata(ctx context.Context, in *SaveMetadataRequest, opts ...grpc.CallOption) (*SaveMetadataResponse, error)
+	SaveVerificationMethods(ctx context.Context, in *MsgSaveVerificationMethods, opts ...grpc.CallOption) (*SaveVerificationMethodsResponse, error)
 }
 
 type dIDDocClient struct {
@@ -72,6 +73,15 @@ func (c *dIDDocClient) SaveMetadata(ctx context.Context, in *SaveMetadataRequest
 	return out, nil
 }
 
+func (c *dIDDocClient) SaveVerificationMethods(ctx context.Context, in *MsgSaveVerificationMethods, opts ...grpc.CallOption) (*SaveVerificationMethodsResponse, error) {
+	out := new(SaveVerificationMethodsResponse)
+	err := c.cc.Invoke(ctx, "/v1.diddoc.DIDDoc/SaveVerificationMethods", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DIDDocServer is the server API for DIDDoc service.
 // All implementations must embed UnimplementedDIDDocServer
 // for forward compatibility
@@ -80,6 +90,7 @@ type DIDDocServer interface {
 	Get(context.Context, *GetRequest) (*GetResponse, error)
 	GetMetadataHistory(context.Context, *GetMetadataHistoryRequest) (*GetMetadataHistoryResponse, error)
 	SaveMetadata(context.Context, *SaveMetadataRequest) (*SaveMetadataResponse, error)
+	SaveVerificationMethods(context.Context, *MsgSaveVerificationMethods) (*SaveVerificationMethodsResponse, error)
 	mustEmbedUnimplementedDIDDocServer()
 }
 
@@ -98,6 +109,9 @@ func (UnimplementedDIDDocServer) GetMetadataHistory(context.Context, *GetMetadat
 }
 func (UnimplementedDIDDocServer) SaveMetadata(context.Context, *SaveMetadataRequest) (*SaveMetadataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveMetadata not implemented")
+}
+func (UnimplementedDIDDocServer) SaveVerificationMethods(context.Context, *MsgSaveVerificationMethods) (*SaveVerificationMethodsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SaveVerificationMethods not implemented")
 }
 func (UnimplementedDIDDocServer) mustEmbedUnimplementedDIDDocServer() {}
 
@@ -184,6 +198,24 @@ func _DIDDoc_SaveMetadata_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _DIDDoc_SaveVerificationMethods_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSaveVerificationMethods)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DIDDocServer).SaveVerificationMethods(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/v1.diddoc.DIDDoc/SaveVerificationMethods",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DIDDocServer).SaveVerificationMethods(ctx, req.(*MsgSaveVerificationMethods))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DIDDoc_ServiceDesc is the grpc.ServiceDesc for DIDDoc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -206,6 +238,10 @@ var DIDDoc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SaveMetadata",
 			Handler:    _DIDDoc_SaveMetadata_Handler,
+		},
+		{
+			MethodName: "SaveVerificationMethods",
+			Handler:    _DIDDoc_SaveVerificationMethods_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
