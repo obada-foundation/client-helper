@@ -4,19 +4,20 @@ import (
 	"testing"
 
 	"cosmossdk.io/math"
+	sdkmath "cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/types"
 )
 
 func TestCoinConvert(t *testing.T) {
-	if err := types.RegisterDenom("rohi", types.NewDec(1)); err != nil {
+	if err := types.RegisterDenom("rohi", sdkmath.LegacyNewDec(1)); err != nil {
 		t.Logf("%+v", err)
 	}
 
-	if err := types.RegisterDenom("obd", types.NewDec(1000000)); err != nil {
+	if err := types.RegisterDenom("obd", sdkmath.LegacyNewDec(1000000)); err != nil {
 		t.Logf("%+v", err)
 	}
 
-	coin1 := types.NewDecCoin("obd", types.NewInt(1))
+	coin1 := types.NewDecCoin("obd", sdkmath.NewInt(1))
 	coin2, err := types.ConvertDecCoin(coin1, "rohi")
 	if err != nil {
 		t.Logf("%+v", err)

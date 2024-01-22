@@ -192,15 +192,17 @@ func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice, pk cryptotypes.P
 			return device, err
 		}
 
+		vm := append(make([]*diddoc.VerificationMethod, 0, 1), &diddoc.VerificationMethod{
+			Id:              verifyMethodID,
+			Type:            regtypes.Ed25519VerificationKey2018JSONLD,
+			Controller:      DID.String(),
+			PublicKeyBase58: base58.Encode(pk.PubKey().Bytes()),
+		})
+
 		// Register DID in OBADA registry
 		_, erReg := ds.registry.Register(ctx, &diddoc.RegisterRequest{
-			Did: DID.String(),
-			VerificationMethod: append(make([]*diddoc.VerificationMethod, 0, 1), &diddoc.VerificationMethod{
-				Id:              verifyMethodID,
-				Type:            regtypes.Ed25519VerificationKey2018JSONLD,
-				Controller:      DID.String(),
-				PublicKeyBase58: base58.Encode(pk.PubKey().Bytes()),
-			}),
+			Did:                DID.String(),
+			VerificationMethod: vm,
 			Authentication: []string{
 				verifyMethodID,
 			},

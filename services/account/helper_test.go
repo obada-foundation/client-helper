@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/testutil/network"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	cosmostestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	"github.com/mustafaturan/bus/v3"
 	"github.com/obada-foundation/client-helper/auth"
 	"github.com/obada-foundation/client-helper/events"
@@ -16,7 +16,7 @@ import (
 	"github.com/obada-foundation/client-helper/system/obadanode"
 	"github.com/obada-foundation/client-helper/system/validate"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tm-db"
+	db "github.com/tendermint/tm-db"
 )
 
 //nolint:gochecknoinits //requred for test
@@ -41,7 +41,7 @@ func createTestService(t *testing.T) (*bus.Bus, *account.Service, context.Contex
 	)
 	require.NoError(t, err, "Cannot initialize OBADA Node client")
 
-	defaultConfig := network.DefaultConfig()
+	defaultConfig := cosmostestutil.MakeTestEncodingConfig()
 
 	kr := keyring.NewInMemory(defaultConfig.Codec)
 

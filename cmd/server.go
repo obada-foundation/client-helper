@@ -9,8 +9,12 @@ import (
 	"syscall"
 	"time"
 
+	tmjson "github.com/cometbft/cometbft/libs/json"
+	ctypes "github.com/cometbft/cometbft/rpc/core/types"
+	jsonrpcclient "github.com/cometbft/cometbft/rpc/jsonrpc/client"
+	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/testutil/network"
+	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	"github.com/getsentry/sentry-go"
 	eb "github.com/mustafaturan/bus/v3"
 	"github.com/obada-foundation/client-helper/api"
@@ -29,10 +33,6 @@ import (
 	obadatypes "github.com/obada-foundation/fullcore/x/obit/types"
 	registry "github.com/obada-foundation/registry/client"
 	"github.com/redis/go-redis/v9"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
-	tmtypes "github.com/tendermint/tendermint/types"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -132,7 +132,7 @@ func (s *ServerCommand) Execute(_ []string) error {
 		return err
 	}
 
-	kr, err := keyring.New("client-helper", keyring.BackendTest, s.Keyring.Dir, nil, network.DefaultConfig().Codec)
+	kr, err := keyring.New("client-helper", keyring.BackendTest, s.Keyring.Dir, nil, testutil.MakeTestEncodingConfig().Codec)
 	if err != nil {
 		return fmt.Errorf("creating keyring error: %w", err)
 	}

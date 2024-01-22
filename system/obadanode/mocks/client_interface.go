@@ -7,7 +7,7 @@ import (
 
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	cosmos_sdktypes "github.com/cosmos/cosmos-sdk/types"
 

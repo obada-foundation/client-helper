@@ -4,20 +4,20 @@ import (
 	"context"
 	"fmt"
 
+	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
+	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 	txtypes "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/obada-foundation/client-helper/services"
 	obadatypes "github.com/obada-foundation/fullcore/x/obit/types"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc"
 )
 
@@ -39,7 +39,7 @@ func NewClient(chainID, rpcURI, grpcURI string) (ObadaChainClient, error) {
 		c = ObadaChainClient{
 			chainID: chainID,
 		}
-		encCfg = simapp.MakeTestEncodingConfig()
+		encCfg = testutil.MakeTestEncodingConfig()
 		err    error
 	)
 
@@ -78,7 +78,7 @@ func (c *ObadaChainClient) BuildTx(ctx context.Context, msg sdk.Msg, priv crypto
 	if er := txBuilder.SetSignatures(signing.SignatureV2{
 		PubKey: priv.PubKey(),
 		Data: &signing.SingleSignatureData{
-			SignMode:  c.txConfig.SignModeHandler().DefaultMode(),
+			SignMode:  signing.SignMode(c.txConfig.SignModeHandler().DefaultMode()),
 			Signature: nil,
 		},
 		Sequence: accSeq,
@@ -100,8 +100,14 @@ func (c *ObadaChainClient) BuildTx(ctx context.Context, msg sdk.Msg, priv crypto
 		Sequence:      accSeq,
 	}
 	sigV2, err := tx.SignWithPrivKey(
-		c.txConfig.SignModeHandler().DefaultMode(), signerData,
-		txBuilder, priv, c.txConfig, accSeq)
+		ctx,
+		signing.SignMode(c.txConfig.SignModeHandler().DefaultMode()),
+		signerData,
+		txBuilder,
+		priv,
+		c.txConfig,
+		accSeq,
+	)
 	if err != nil {
 		return nil, err
 	}

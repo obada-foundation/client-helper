@@ -79,7 +79,7 @@ func (c NodeClient) GetNFTByAddress(ctx context.Context, address string) ([]obad
 		return nil, err
 	}
 
-	return resp.NFT, nil
+	return resp.GetNft(), nil
 
 }
 
@@ -92,7 +92,9 @@ func (c NodeClient) GetNFT(ctx context.Context, did string) (*obadatypes.NFT, er
 		return nil, err
 	}
 
-	return resp, nil
+	nft := resp.GetNft()
+
+	return &nft, nil
 
 }
 
