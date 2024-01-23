@@ -110,7 +110,7 @@ func (c NodeClient) SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.Pr
 	}
 	// Note: In async case, response is returned before TxCheck
 	// res, err := c.clientHTTP.BroadcastTxAsync(ctx, txBytes)
-	if errRes := client.CheckTendermintError(err, txBytes); errRes != nil {
+	if errRes := client.CheckCometError(err, txBytes); errRes != nil {
 		return nil, fmt.Errorf("code: %d, log: %s, codespace: %s", errRes.Code, errRes.Logs, res.Codespace)
 	}
 
@@ -133,8 +133,8 @@ func (c NodeClient) BuildTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.P
 	if err != nil {
 		return nil, err
 	}
-	txBuilder.SetGasLimit(uint64(200000))
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("rohi", sdkmath.NewInt(10000))))
+	txBuilder.SetGasLimit(uint64(100000))
+	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("rohi", sdkmath.NewInt(100000))))
 
 	// First round: we gather all the signer infos. We use the "set empty signature" hack to do that.
 	if er := txBuilder.SetSignatures(signing.SignatureV2{
@@ -157,10 +157,13 @@ func (c NodeClient) BuildTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.P
 
 	// Second round: all signer infos are set, so each signer can sign.
 	signerData := authsigning.SignerData{
+		Address:       accAddress,
 		ChainID:       c.chainID,
 		AccountNumber: acc.GetAccountNumber(),
 		Sequence:      accSeq,
+		PubKey:        priv.PubKey(),
 	}
+
 	sigV2, err := tx.SignWithPrivKey(
 		ctx,
 		signing.SignMode(c.txConfig.SignModeHandler().DefaultMode()),

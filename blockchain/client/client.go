@@ -119,7 +119,7 @@ func (c *ObadaChainClient) BuildTx(ctx context.Context, msg sdk.Msg, priv crypto
 }
 
 // Account returns the account info
-func (c ObadaChainClient) Account(ctx context.Context, address string) (acc authtypes.AccountI, err error) {
+func (c ObadaChainClient) Account(ctx context.Context, address string) (acc sdk.AccountI, err error) {
 	req := &authtypes.QueryAccountRequest{Address: address}
 
 	res, err := c.authClient.Account(ctx, req)

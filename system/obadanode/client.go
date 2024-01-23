@@ -44,7 +44,7 @@ type Client interface {
 	HasAccount(ctx context.Context, address string) (bool, error)
 
 	// Account returns the account of specified address
-	Account(ctx context.Context, address string) (acc authtypes.AccountI, err error)
+	Account(ctx context.Context, address string) (acc sdk.AccountI, err error)
 
 	// Tx methods
 	SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey) (*ctypes.ResultBroadcastTx, error)
@@ -101,12 +101,15 @@ func NewClient(ctx context.Context, chainID, rpcURI, grpcURI string) (NodeClient
 	c.bankClient = banktypes.NewQueryClient(c.conn)
 	c.obadaClient = obadatypes.NewQueryClient(c.conn)
 
+	encCfg.InterfaceRegistry.RegisterInterface("AccountI", (*sdk.AccountI)(nil), &authtypes.BaseAccount{})
 	encCfg.InterfaceRegistry.RegisterInterface("obadafoundation.fullcore.obit.NFTData", (*proto.Message)(nil), &obadatypes.NFTData{})
 	encCfg.InterfaceRegistry.RegisterImplementations((*sdk.Msg)(nil),
 		&obadatypes.MsgMintNFT{},
 		&obadatypes.MsgUpdateNFT{},
 		&obadatypes.MsgTransferNFT{},
 		&obadatypes.MsgUpdateUriHash{},
+		&obadatypes.MsgBatchTransferNFT{},
+		&obadatypes.MsgBatchMintNFT{},
 	)
 
 	c.cdc = codec.NewProtoCodec(encCfg.InterfaceRegistry)

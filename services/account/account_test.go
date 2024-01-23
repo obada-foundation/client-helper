@@ -402,6 +402,8 @@ func TestService_GetProfileAccount(t *testing.T) {
 		err := testutil.AddBalance(t, c, defaultAddress, "1000000rohi")
 		require.NoError(t, err)
 
+		time.Sleep(1 * time.Second)
+
 		acc, err := service.GetProfileAccount(ctx, defaultAddress)
 		require.NoError(t, err)
 

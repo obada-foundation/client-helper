@@ -112,11 +112,12 @@ func (c NodeClient) HasAccount(ctx context.Context, address string) (bool, error
 }
 
 // Account returns the account details for a gived address
-func (c NodeClient) Account(ctx context.Context, address string) (acc authtypes.AccountI, err error) {
+func (c NodeClient) Account(ctx context.Context, address string) (acc types.AccountI, err error) {
 	req := &authtypes.QueryAccountRequest{Address: address}
 
 	res, err := c.authClient.Account(ctx, req)
 	if err != nil {
+
 		statusError, ok := status.FromError(err)
 		if !ok || statusError.Code() != codes.NotFound {
 			return
