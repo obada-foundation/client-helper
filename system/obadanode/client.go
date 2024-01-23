@@ -2,20 +2,22 @@ package obadanode
 
 import (
 	"context"
+	"math"
 
+	sdkmath "cosmossdk.io/math"
+	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
+	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	txtypes "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	proto "github.com/gogo/protobuf/proto"
 	obadatypes "github.com/obada-foundation/fullcore/x/obit/types"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc"
 )
 
@@ -42,7 +44,7 @@ type Client interface {
 	HasAccount(ctx context.Context, address string) (bool, error)
 
 	// Account returns the account of specified address
-	Account(ctx context.Context, address string) (acc authtypes.AccountI, err error)
+	Account(ctx context.Context, address string) (acc sdk.AccountI, err error)
 
 	// Tx methods
 	SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey) (*ctypes.ResultBroadcastTx, error)
@@ -82,7 +84,7 @@ func NewClient(ctx context.Context, chainID, rpcURI, grpcURI string) (NodeClient
 		c = NodeClient{
 			chainID: chainID,
 		}
-		encCfg = simapp.MakeTestEncodingConfig()
+		encCfg = testutil.MakeTestEncodingConfig()
 		err    error
 	)
 
@@ -99,11 +101,15 @@ func NewClient(ctx context.Context, chainID, rpcURI, grpcURI string) (NodeClient
 	c.bankClient = banktypes.NewQueryClient(c.conn)
 	c.obadaClient = obadatypes.NewQueryClient(c.conn)
 
+	encCfg.InterfaceRegistry.RegisterInterface("AccountI", (*sdk.AccountI)(nil), &authtypes.BaseAccount{})
 	encCfg.InterfaceRegistry.RegisterInterface("obadafoundation.fullcore.obit.NFTData", (*proto.Message)(nil), &obadatypes.NFTData{})
 	encCfg.InterfaceRegistry.RegisterImplementations((*sdk.Msg)(nil),
 		&obadatypes.MsgMintNFT{},
 		&obadatypes.MsgUpdateNFT{},
 		&obadatypes.MsgTransferNFT{},
+		&obadatypes.MsgUpdateUriHash{},
+		&obadatypes.MsgBatchTransferNFT{},
+		&obadatypes.MsgBatchMintNFT{},
 	)
 
 	c.cdc = codec.NewProtoCodec(encCfg.InterfaceRegistry)
@@ -116,7 +122,7 @@ func NewClient(ctx context.Context, chainID, rpcURI, grpcURI string) (NodeClient
 	}
 
 	if _, ok := sdk.GetDenomUnit(baseDenom); !ok {
-		if er := sdk.RegisterDenom(baseDenom, sdk.NewDec(1)); er != nil {
+		if er := sdk.RegisterDenom(baseDenom, sdkmath.LegacyNewDec(1)); er != nil {
 			return c, er
 		}
 	}
@@ -124,7 +130,9 @@ func NewClient(ctx context.Context, chainID, rpcURI, grpcURI string) (NodeClient
 	for _, denomUnit := range baseDenomMetdata.DenomUnits {
 		if denomUnit.Denom != baseDenom {
 			if _, ok := sdk.GetDenomUnit(denomUnit.Denom); !ok {
-				if er := sdk.RegisterDenom(denomUnit.Denom, sdk.NewDec(10*int64(denomUnit.Exponent))); er != nil {
+				exp := int64(1 * math.Pow10(int(denomUnit.Exponent)))
+
+				if er := sdk.RegisterDenom(denomUnit.Denom, sdkmath.LegacyNewDec(exp)); er != nil {
 					return c, er
 				}
 			}

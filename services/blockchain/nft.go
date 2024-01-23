@@ -3,6 +3,7 @@ package blockchain
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -76,10 +77,13 @@ func (bs Service) MintGasEstimate(ctx context.Context, d services.Device, addree
 }
 
 func (bs Service) buildMintMsg(d services.Device, address string) *types.MsgMintNFT {
+
+	URI := fmt.Sprintf("%s/api/v1.0/diddoc/%s", bs.registryURL, d.DID)
+
 	return &types.MsgMintNFT{
 		Creator: address,
 		Id:      d.DID,
-		Uri:     d.Manufacturer,
+		Uri:     URI,
 		Usn:     d.Usn,
 		UriHash: d.Checksum,
 	}
@@ -100,10 +104,10 @@ func (bs Service) EditNFTMetadata(ctx context.Context, d services.Device, privKe
 		return er
 	}
 
-	msg := &types.MsgUpdateNFT{
+	msg := &types.MsgUpdateUriHash{
 		Id:      nft.Id,
 		Editor:  accAddress,
-		NFTData: nftData,
+		UriHash: d.Checksum,
 	}
 
 	resp, err := bs.nodeClient.SendTx(ctx, msg, privKey)
@@ -175,7 +179,7 @@ func (bs Service) TransferNFT(ctx context.Context, did, receiverAddr string, pri
 		return err
 	}
 
-	bs.logger.Info("NFT was transferred", msg, resp)
+	bs.logger.Info("NFT transfer request was sent", msg, resp)
 
 	return nil
 }

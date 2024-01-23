@@ -20,6 +20,7 @@ import (
 	ipfssh "github.com/obada-foundation/client-helper/system/ipfs"
 	"github.com/obada-foundation/client-helper/system/validate"
 	"github.com/obada-foundation/fullcore/x/obit/types"
+	regapi "github.com/obada-foundation/registry/api"
 	"github.com/obada-foundation/registry/api/pb/v1/diddoc"
 	"github.com/obada-foundation/registry/client"
 	regtypes "github.com/obada-foundation/registry/types"
@@ -98,7 +99,7 @@ func (ds Service) handleDocuments(_ context.Context, sd svcs.SaveDevice, pk cryp
 			svcs.SaveDeviceDocument{
 				Name:          string(asset.PhysicalAssetIdentifiers),
 				Type:          string(asset.PhysicalAssetIdentifiers),
-				ShouldEncrypt: true,
+				ShouldEncrypt: false,
 			},
 		)
 	}
@@ -175,9 +176,12 @@ func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice, pk cryptotypes.P
 		return device, err
 	}
 
+	verifyMethodID := fmt.Sprintf("%s#keys-1", DID.String())
+
 	_, err = ds.registry.Get(ctx, &diddoc.GetRequest{
 		Did: DID.String(),
 	})
+
 	if err != nil {
 		er, ok := status.FromError(err)
 		if !ok {
@@ -188,16 +192,17 @@ func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice, pk cryptotypes.P
 			return device, err
 		}
 
-		verifyMethodID := fmt.Sprintf("%s#keys-1", DID.String())
+		vm := append(make([]*diddoc.VerificationMethod, 0, 1), &diddoc.VerificationMethod{
+			Id:              verifyMethodID,
+			Type:            regtypes.Ed25519VerificationKey2018JSONLD,
+			Controller:      DID.String(),
+			PublicKeyBase58: base58.Encode(pk.PubKey().Bytes()),
+		})
 
 		// Register DID in OBADA registry
 		_, erReg := ds.registry.Register(ctx, &diddoc.RegisterRequest{
-			Did: DID.String(),
-			VerificationMethod: append(make([]*diddoc.VerificationMethod, 0, 1), &diddoc.VerificationMethod{
-				Id:              verifyMethodID,
-				Type:            regtypes.Ed25519VerificationKey2018JSONLD,
-				PublicKeyBase58: base58.Encode(pk.Bytes()),
-			}),
+			Did:                DID.String(),
+			VerificationMethod: vm,
 			Authentication: []string{
 				verifyMethodID,
 			},
@@ -232,16 +237,17 @@ func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice, pk cryptotypes.P
 	}
 
 	data := &diddoc.SaveMetadataRequest_Data{
-		Did:     DID.String(),
-		Objects: objs,
+		Did:                 DID.String(),
+		AuthenticationKeyId: verifyMethodID,
+		Objects:             objs,
 	}
 
-	dataBytes, err := proto.Marshal(data)
+	hash, err := regapi.ProtoDeterministicChecksum(data)
 	if err != nil {
 		return device, err
 	}
 
-	signature, err := pk.Sign(dataBytes)
+	signature, err := pk.Sign(hash[:])
 	if err != nil {
 		return device, err
 	}
@@ -251,7 +257,7 @@ func (ds Service) Save(ctx context.Context, sd svcs.SaveDevice, pk cryptotypes.P
 		Data:      data,
 	})
 	if err != nil {
-		return device, err
+		return device, fmt.Errorf("cannot save metadata to registry: %w", err)
 	}
 
 	resp, err := ds.registry.Get(ctx, &diddoc.GetRequest{
@@ -529,7 +535,7 @@ func (ds Service) Delete(ctx context.Context, key string) error {
 		return fmt.Errorf("cannot delete device %s: %w", key, err)
 	}
 
-	if err := ds.db.Delete(makeDIDKey(userID, device.DID)); err != nil {
+	if err := ds.db.DeleteSync(makeDIDKey(userID, device.DID)); err != nil {
 		return fmt.Errorf("cannot delete device %s: %w", key, err)
 	}
 

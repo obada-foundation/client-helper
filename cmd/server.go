@@ -9,10 +9,17 @@ import (
 	"syscall"
 	"time"
 
+	tmjson "github.com/cometbft/cometbft/libs/json"
+	ctypes "github.com/cometbft/cometbft/rpc/core/types"
+	jsonrpcclient "github.com/cometbft/cometbft/rpc/jsonrpc/client"
+	tmtypes "github.com/cometbft/cometbft/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/testutil/network"
+	"github.com/cosmos/cosmos-sdk/types/module/testutil"
+	"github.com/getsentry/sentry-go"
 	eb "github.com/mustafaturan/bus/v3"
 	"github.com/obada-foundation/client-helper/api"
+	"github.com/obada-foundation/client-helper/auth"
+	"github.com/obada-foundation/client-helper/bus"
 	"github.com/obada-foundation/client-helper/events"
 	"github.com/obada-foundation/client-helper/events/handlers"
 	"github.com/obada-foundation/client-helper/services"
@@ -20,25 +27,15 @@ import (
 	"github.com/obada-foundation/client-helper/services/blockchain"
 	"github.com/obada-foundation/client-helper/services/device"
 	"github.com/obada-foundation/client-helper/services/pubkey"
-	obadatypes "github.com/obada-foundation/fullcore/x/obit/types"
-
-	"github.com/getsentry/sentry-go"
-	"github.com/obada-foundation/client-helper/auth"
-	"github.com/obada-foundation/client-helper/bus"
 	"github.com/obada-foundation/client-helper/system/ipfs"
 	"github.com/obada-foundation/client-helper/system/obadanode"
 	"github.com/obada-foundation/client-helper/system/validate"
+	obadatypes "github.com/obada-foundation/fullcore/x/obit/types"
 	registry "github.com/obada-foundation/registry/client"
+	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	//	"github.com/obada-foundation/fullcore/x/obit/types"
-	"github.com/redis/go-redis/v9"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
-	tmtypes "github.com/tendermint/tendermint/types"
-	"go.uber.org/zap"
 )
 
 // ServerCommand with command line flags and env
@@ -101,6 +98,7 @@ type IPFSGroup struct {
 // RegistryGroup defines options for connection to the OBADA DID registry
 type RegistryGroup struct {
 	GrpcURL string `long:"url" env:"URL" description:"Registry HTTP URL"`
+	HTTPUrl string `long:"http-url" env:"HTTP_URL" description:"Registry HTTP API URL"`
 }
 
 // Execute is the entry point for "server" command, called by flag parser
@@ -134,13 +132,13 @@ func (s *ServerCommand) Execute(_ []string) error {
 		return err
 	}
 
-	kr, err := keyring.New("client-helper", keyring.BackendTest, s.Keyring.Dir, nil, network.DefaultConfig().Codec)
+	kr, err := keyring.New("client-helper", keyring.BackendTest, s.Keyring.Dir, nil, testutil.MakeTestEncodingConfig().Codec)
 	if err != nil {
 		return fmt.Errorf("creating keyring error: %w", err)
 	}
 
 	accountSvc := account.NewService(validator, s.DB, nodeClient, kr, eventBus)
-	blockchainSvc := blockchain.NewService(nodeClient, s.Logger)
+	blockchainSvc := blockchain.NewService(nodeClient, s.Logger, s.Registry.HTTPUrl)
 
 	// IPFS client init
 	ipfsShell := ipfs.NewIPFS(s.IPFS.RPCURL)
@@ -187,6 +185,8 @@ func (s *ServerCommand) Execute(_ []string) error {
 		Bus:         eventBus,
 		Logger:      s.Logger,
 		RedisClient: rdb,
+		Registry:    regClient,
+		Keyring:     kr,
 
 		DeviceSvc:     deviceSvc,
 		BlockchainSvc: blockchainSvc,
@@ -221,6 +221,7 @@ func (s *ServerCommand) Execute(_ []string) error {
 		BlockchainSvc: blockchainSvc,
 		DeviceSvc:     deviceSvc,
 		ObitSvc:       obitSvc,
+		Registry:      regClient,
 	})
 
 	serverErrors := make(chan error, 1)
@@ -324,7 +325,7 @@ func (s *ServerCommand) makeWsClient(ctx context.Context, cfg wsClientConfig) (*
 							}
 
 							switch val[0] {
-							case "mint_obit":
+							case "mint_nft":
 								for _, msg := range tx.GetMsgs() {
 									msg, ok := msg.(*obadatypes.MsgMintNFT)
 									if ok {
@@ -337,9 +338,9 @@ func (s *ServerCommand) makeWsClient(ctx context.Context, cfg wsClientConfig) (*
 									}
 								}
 								s.Logger.Infow("obit was minted", "data", result.Data)
-							case "edit_metadata":
+							case "update_uri_hash":
 								for _, msg := range tx.GetMsgs() {
-									msg, ok := msg.(*obadatypes.MsgUpdateNFT)
+									msg, ok := msg.(*obadatypes.MsgUpdateUriHash)
 									if ok {
 										// for future refactoring
 										_ = cfg.bus.Emit(ctx, events.NftMetadataUpdated, msg.Id)
@@ -366,7 +367,7 @@ func (s *ServerCommand) makeWsClient(ctx context.Context, cfg wsClientConfig) (*
 									}
 								}
 
-							case "send_obit":
+							case "transfer_nft":
 								for _, msg := range tx.GetMsgs() {
 									msg, ok := msg.(*obadatypes.MsgTransferNFT)
 									if ok {

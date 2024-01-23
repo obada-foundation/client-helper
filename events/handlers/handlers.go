@@ -5,12 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/mustafaturan/bus/v3"
 	"github.com/obada-foundation/client-helper/events"
 	"github.com/obada-foundation/client-helper/services/blockchain"
 	"github.com/obada-foundation/client-helper/services/device"
 	pbacc "github.com/obada-foundation/registry/api/pb/v1/account"
 	registry "github.com/obada-foundation/registry/client"
+	"github.com/obada-foundation/sdkgo/base58"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
@@ -25,6 +28,7 @@ type Config struct {
 	DeviceSvc     *device.Service
 	BlockchainSvc *blockchain.Service
 	Registry      registry.Client
+	Keyring       keyring.Keyring
 }
 
 // EventManager manages ClientHelper events
@@ -35,6 +39,7 @@ type EventManager struct {
 	deviceSvc     *device.Service
 	blockchainSvc *blockchain.Service
 	registry      registry.Client
+	kr            keyring.Keyring
 }
 
 // Initialize initializes handlers
@@ -46,6 +51,7 @@ func Initialize(cfg Config) {
 		deviceSvc:     cfg.DeviceSvc,
 		blockchainSvc: cfg.BlockchainSvc,
 		registry:      cfg.Registry,
+		kr:            cfg.Keyring,
 	}
 
 	manager.RegisterEvents()
@@ -91,11 +97,27 @@ func (em EventManager) accountCreatedHandler(ctx context.Context, e bus.Event) {
 			em.logger.Errorw("failed to check if account key is in the registry", "EVENT", events.AccountCreated, "address", accAddress, "error", err)
 		}
 
-		if _, err := em.registry.RegisterAccount(ctx, &pbacc.RegisterAccountRequest{}); err != nil {
-			em.logger.Errorw("failed to register account in the registry", "EVENT", events.AccountCreated, "address", accAddress, "error", err)
+		addr, _ := types.AccAddressFromBech32(accAddress)
+
+		key, err := em.kr.KeyByAddress(addr)
+		if err != nil {
+			em.logger.Errorw("cannot find key in keyring", "EVENT", events.AccountCreated, "address", accAddress, "error", err)
 		}
 
-		em.logger.Infow("added to the registry", "EVENT", events.AccountCreated, "account address", accAddress)
+		if err == nil {
+			pubKey, _ := key.GetPubKey()
+
+			msg := &pbacc.RegisterAccountRequest{
+				Pubkey: base58.Encode(pubKey.Bytes()),
+			}
+
+			_, err := em.registry.RegisterAccount(ctx, msg)
+			if err != nil {
+				em.logger.Errorw("failed to register account in the registry", "EVENT", events.AccountCreated, "address", accAddress, "error", er)
+			} else {
+				em.logger.Infow("added to the registry", "EVENT", events.AccountCreated, "account address", accAddress)
+			}
+		}
 	}
 
 	nfts, err := em.blockchainSvc.GetNFTByAddress(ctx, accAddress)
@@ -153,6 +175,8 @@ func (em EventManager) RegisterHandlers() {
 				DID := fmt.Sprintf("%v", e.Data)
 
 				em.redis.Publish(ctx, events.NftMinted, DID)
+
+				em.logger.Infow("nft minted", "EVENT", events.NftMinted, "DID", DID)
 			},
 			Matcher: events.NftMinted,
 		}
@@ -177,6 +201,8 @@ func (em EventManager) RegisterHandlers() {
 				DID := fmt.Sprintf("%v", e.Data)
 
 				em.redis.Publish(ctx, events.NftTransfered, DID)
+
+				em.logger.Infow("nft received", "EVENT", events.NftTransfered, "DID", DID)
 			},
 			Matcher: events.NftTransfered,
 		}

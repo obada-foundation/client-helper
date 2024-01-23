@@ -2,7 +2,7 @@ package keyring
 
 import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	"github.com/cosmos/cosmos-sdk/testutil/network"
+	cosmostestutil "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	"github.com/cosmos/go-bip39"
 )
 
@@ -15,7 +15,7 @@ const (
 
 // NewKeying creates a new keyring with a single key
 func NewKeying(_, keyringPath string) (keyring.Keyring, error) {
-	return keyring.New("client-helper", keyring.BackendFile, keyringPath, nil, network.DefaultConfig().Codec)
+	return keyring.New("client-helper", keyring.BackendFile, keyringPath, nil, cosmostestutil.MakeTestEncodingConfig().Codec)
 }
 
 // NewMnemonic generates a new mnemonic, derives a hierarchical deterministic

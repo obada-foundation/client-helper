@@ -15,6 +15,7 @@ import (
 	"github.com/obada-foundation/client-helper/events"
 	"github.com/obada-foundation/client-helper/services"
 	"github.com/obada-foundation/client-helper/services/account"
+	"github.com/obada-foundation/common/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -377,21 +378,41 @@ func TestService_ImportAccount(t *testing.T) {
 }
 
 func TestService_GetProfileAccount(t *testing.T) {
-	t.Log("Testing single account")
+
 	_, service, ctx, deferFn := createTestService(t)
 	defer deferFn()
 
 	_, err := service.NewWallet(ctx, defaultMnemonic, false)
 	require.NoError(t, err, "Cannot create user profile HD wallet")
 
-	acc, err := service.GetProfileAccount(ctx, defaultAddress)
-	require.NoError(t, err)
+	t.Log("Testing single account")
+	{
+		acc, err := service.GetProfileAccount(ctx, defaultAddress)
+		require.NoError(t, err)
 
-	assert.NotEmpty(t, acc.Balance)
-	assert.Equal(t, uint(0), acc.NFTsCount)
-	assert.Equal(t, "", acc.Name)
-	assert.Equal(t, defaultAddress, acc.Address)
-	assert.Equal(t, defaultPubKey, acc.PublicKey)
+		assert.Equal(t, uint(0), acc.NFTsCount)
+		assert.Equal(t, "", acc.Name)
+		assert.Equal(t, defaultAddress, acc.Address)
+		assert.Equal(t, defaultPubKey, acc.PublicKey)
+		assert.Equal(t, "0.000000000000000000obd", acc.Balance.String())
+	}
+
+	t.Log("Testing single account with balance")
+	{
+		err := testutil.AddBalance(t, c, defaultAddress, "1000000rohi")
+		require.NoError(t, err)
+
+		time.Sleep(1 * time.Second)
+
+		acc, err := service.GetProfileAccount(ctx, defaultAddress)
+		require.NoError(t, err)
+
+		assert.Equal(t, uint(0), acc.NFTsCount)
+		assert.Equal(t, "", acc.Name)
+		assert.Equal(t, defaultAddress, acc.Address)
+		assert.Equal(t, defaultPubKey, acc.PublicKey)
+		assert.Equal(t, "1.000000000000000000obd", acc.Balance.String())
+	}
 
 	privKey, err := service.GetAccountPrivateKey(ctx, defaultAddress)
 	require.NoError(t, err)
@@ -430,7 +451,7 @@ func TestService_ImportWallet2(t *testing.T) {
 
 		accounts, err = service.GetProfileAccounts(ctx)
 		require.NoError(t, err)
-
+		t.Log(accounts.HDAccounts)
 		assert.Equal(t, 1, len(accounts.HDAccounts))
 		assert.Equal(t, 0, len(accounts.ImportedAccounts))
 	}

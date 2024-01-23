@@ -196,7 +196,7 @@ func startupT(t *testing.T) (*bus.Bus, *device.Service, *mocks.Client, *regclien
 
 	nodeClient := &mocks.Client{}
 
-	blockchainSvc := blockchain.NewService(nodeClient, logger)
+	blockchainSvc := blockchain.NewService(nodeClient, logger, "")
 
 	dbs, _ := redismock.NewClientMock()
 

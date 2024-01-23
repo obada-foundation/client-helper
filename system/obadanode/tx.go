@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	sdkmath "cosmossdk.io/math"
+	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -13,7 +15,6 @@ import (
 	txs "github.com/cosmos/cosmos-sdk/types/tx"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 // BuildUnsignedTx builds a transaction to be signed given a set of messages.
@@ -53,7 +54,8 @@ func (c NodeClient) BuildSimTx(msgs ...sdk.Msg) ([]byte, error) {
 	sig := signing.SignatureV2{
 		PubKey: pk,
 		Data: &signing.SingleSignatureData{
-			SignMode: c.txConfig.SignModeHandler().DefaultMode(),
+			//SignMode: c.txConfig.SignModeHandler().DefaultMode(),
+			SignMode: signing.SignMode(c.txConfig.SignModeHandler().DefaultMode()),
 		},
 		Sequence: 0,
 	}
@@ -108,7 +110,7 @@ func (c NodeClient) SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.Pr
 	}
 	// Note: In async case, response is returned before TxCheck
 	// res, err := c.clientHTTP.BroadcastTxAsync(ctx, txBytes)
-	if errRes := client.CheckTendermintError(err, txBytes); errRes != nil {
+	if errRes := client.CheckCometError(err, txBytes); errRes != nil {
 		return nil, fmt.Errorf("code: %d, log: %s, codespace: %s", errRes.Code, errRes.Logs, res.Codespace)
 	}
 
@@ -131,14 +133,14 @@ func (c NodeClient) BuildTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.P
 	if err != nil {
 		return nil, err
 	}
-	txBuilder.SetGasLimit(uint64(200000))
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("obd", sdk.NewInt(1))))
+	txBuilder.SetGasLimit(uint64(100000))
+	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("rohi", sdkmath.NewInt(100000))))
 
 	// First round: we gather all the signer infos. We use the "set empty signature" hack to do that.
 	if er := txBuilder.SetSignatures(signing.SignatureV2{
 		PubKey: priv.PubKey(),
 		Data: &signing.SingleSignatureData{
-			SignMode:  c.txConfig.SignModeHandler().DefaultMode(),
+			SignMode:  signing.SignMode(c.txConfig.SignModeHandler().DefaultMode()),
 			Signature: nil,
 		},
 		Sequence: accSeq,
@@ -155,13 +157,22 @@ func (c NodeClient) BuildTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.P
 
 	// Second round: all signer infos are set, so each signer can sign.
 	signerData := authsigning.SignerData{
+		Address:       accAddress,
 		ChainID:       c.chainID,
 		AccountNumber: acc.GetAccountNumber(),
 		Sequence:      accSeq,
+		PubKey:        priv.PubKey(),
 	}
+
 	sigV2, err := tx.SignWithPrivKey(
-		c.txConfig.SignModeHandler().DefaultMode(), signerData,
-		txBuilder, priv, c.txConfig, accSeq)
+		ctx,
+		signing.SignMode(c.txConfig.SignModeHandler().DefaultMode()),
+		signerData,
+		txBuilder,
+		priv,
+		c.txConfig,
+		accSeq,
+	)
 	if err != nil {
 		return nil, err
 	}

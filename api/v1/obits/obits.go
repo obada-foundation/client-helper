@@ -10,12 +10,15 @@ import (
 	"github.com/obada-foundation/client-helper/services/account"
 	"github.com/obada-foundation/client-helper/services/device"
 	"github.com/obada-foundation/client-helper/system/web"
+	"github.com/obada-foundation/registry/api/pb/v1/diddoc"
+	"github.com/obada-foundation/registry/client"
 )
 
 // Handlers holds dependencies
 type Handlers struct {
 	DeviceSvc  *device.Service
 	AccountSvc *account.Service
+	Registry   client.Client
 }
 
 // Obit returns an obit by USN or DID
@@ -75,4 +78,25 @@ func (h Handlers) Search(ctx context.Context, w http.ResponseWriter, r *http.Req
 	}
 
 	return web.Respond(ctx, w, devices, http.StatusOK)
+}
+
+// History returns Obit history of changes
+func (h Handlers) History(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	key := web.Param(r, "key")
+
+	d, err := h.DeviceSvc.GetByUSN(ctx, key)
+	if err != nil {
+		return err
+	}
+
+	msg := &diddoc.GetMetadataHistoryRequest{
+		Did: d.DID,
+	}
+
+	resp, err := h.Registry.GetMetadataHistory(ctx, msg)
+	if err != nil {
+		return err
+	}
+
+	return web.Respond(ctx, w, resp.GetMetadataHistory(), http.StatusOK)
 }

@@ -8,16 +8,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tendermint/tendermint/libs/bytes"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/libs/log"
-	tmpubsub "github.com/tendermint/tendermint/libs/pubsub"
-	"github.com/tendermint/tendermint/libs/service"
-	tmsync "github.com/tendermint/tendermint/libs/sync"
-	rpcclient "github.com/tendermint/tendermint/rpc/client"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	jsonrpcclient "github.com/tendermint/tendermint/rpc/jsonrpc/client"
-	"github.com/tendermint/tendermint/types"
+	"github.com/cometbft/cometbft/libs/bytes"
+	tmjson "github.com/cometbft/cometbft/libs/json"
+	"github.com/cometbft/cometbft/libs/log"
+	tmpubsub "github.com/cometbft/cometbft/libs/pubsub"
+	"github.com/cometbft/cometbft/libs/service"
+	tmsync "github.com/cometbft/cometbft/libs/sync"
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
+	ctypes "github.com/cometbft/cometbft/rpc/core/types"
+	jsonrpcclient "github.com/cometbft/cometbft/rpc/jsonrpc/client"
+	"github.com/cometbft/cometbft/types"
 )
 
 /*
@@ -177,6 +177,32 @@ func (c *HTTP) NewBatch() *BatchHTTP {
 	}
 }
 
+// Header returns the block header at a given height.
+func (c *HTTP) Header(ctx context.Context, height *int64) (*ctypes.ResultHeader, error) {
+	result := new(ctypes.ResultHeader)
+	params := make(map[string]interface{})
+	if height != nil {
+		params["height"] = height
+	}
+	_, err := c.caller.Call(ctx, "header", params, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (c *HTTP) HeaderByHash(ctx context.Context, hash bytes.HexBytes) (*ctypes.ResultHeader, error) {
+	result := new(ctypes.ResultHeader)
+	params := map[string]interface{}{
+		"hash": hash,
+	}
+	_, err := c.caller.Call(ctx, "header_by_hash", params, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 //-----------------------------------------------------------------------------
 // BatchHTTP
 
@@ -199,6 +225,32 @@ func (b *BatchHTTP) Count() int {
 	return b.rpcBatch.Count()
 }
 
+// Header returns the block header at a given height.
+func (b *BatchHTTP) Header(ctx context.Context, height *int64) (*ctypes.ResultHeader, error) {
+	result := new(ctypes.ResultHeader)
+	params := make(map[string]interface{})
+	if height != nil {
+		params["height"] = height
+	}
+	_, err := b.caller.Call(ctx, "header", params, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (b *BatchHTTP) HeaderByHash(ctx context.Context, hash bytes.HexBytes) (*ctypes.ResultHeader, error) {
+	result := new(ctypes.ResultHeader)
+	params := map[string]interface{}{
+		"hash": hash,
+	}
+	_, err := b.caller.Call(ctx, "header_by_hash", params, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 //-----------------------------------------------------------------------------
 // baseRPCClient
 
@@ -209,6 +261,32 @@ func (c *baseRPCClient) Status(ctx context.Context) (*ctypes.ResultStatus, error
 		return nil, err
 	}
 
+	return result, nil
+}
+
+// Header returns the block header at a given height.
+func (c *baseRPCClient) Header(ctx context.Context, height *int64) (*ctypes.ResultHeader, error) {
+	result := new(ctypes.ResultHeader)
+	params := make(map[string]interface{})
+	if height != nil {
+		params["height"] = height
+	}
+	_, err := c.caller.Call(ctx, "header", params, result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (c *baseRPCClient) HeaderByHash(ctx context.Context, hash bytes.HexBytes) (*ctypes.ResultHeader, error) {
+	result := new(ctypes.ResultHeader)
+	params := map[string]interface{}{
+		"hash": hash,
+	}
+	_, err := c.caller.Call(ctx, "header_by_hash", params, result)
+	if err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 

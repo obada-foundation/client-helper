@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	sdkmath "cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/obada-foundation/client-helper/services"
 	"github.com/obada-foundation/client-helper/services/account"
@@ -137,7 +138,7 @@ func TestAccount(t *testing.T) {
 		assert.Equal(t, 0, len(profileAccounts.ImportedAccounts))
 
 		acc := profileAccounts.HDAccounts[0]
-		assert.Equal(t, sdk.NewDecCoin("obd", sdk.NewInt(0)), acc.Balance)
+		assert.Equal(t, sdk.NewDecCoin("obd", sdkmath.NewInt(0)), acc.Balance)
 		assert.Equal(t, defaultAccount, acc.Address)
 		assert.Equal(t, uint(0), acc.NFTsCount)
 		assert.Equal(t, "", acc.Name)
@@ -378,7 +379,7 @@ func TestAccount_account(t *testing.T) {
 		err = json.Unmarshal(b, &acc)
 		assert.NoError(t, err)
 
-		assert.Equal(t, sdk.NewDecCoin("obd", sdk.NewInt(0)), acc.Balance)
+		assert.Equal(t, sdk.NewDecCoin("obd", sdkmath.NewInt(0)), acc.Balance)
 		assert.Equal(t, defaultAccount, acc.Address)
 		assert.Equal(t, uint(0), acc.NFTsCount)
 		assert.Equal(t, defaultPublicKey, acc.PublicKey)

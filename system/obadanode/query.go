@@ -39,14 +39,12 @@ func (c NodeClient) BaseDenomMetadata(ctx context.Context) (banktypes.Metadata, 
 
 // Balance implements the Balance method of the Client interface
 func (c NodeClient) Balance(ctx context.Context, pubKey cryptotypes.PubKey) (*banktypes.QueryBalanceResponse, error) {
-
 	addr := types.AccAddress(pubKey.Address())
 
 	req := &banktypes.QueryBalanceRequest{
 		Address: addr.String(),
 		Denom:   "rohi",
 	}
-
 	res, err := c.bankClient.Balance(ctx, req)
 	if err != nil {
 		return nil, err
@@ -60,7 +58,7 @@ func (c NodeClient) Balance(ctx context.Context, pubKey cryptotypes.PubKey) (*ba
 func (c NodeClient) BalanceByAddress(ctx context.Context, address string) (*banktypes.QueryBalanceResponse, error) {
 	req := &banktypes.QueryBalanceRequest{
 		Address: address,
-		Denom:   "obd",
+		Denom:   "rohi",
 	}
 
 	res, err := c.bankClient.Balance(ctx, req)
@@ -81,7 +79,7 @@ func (c NodeClient) GetNFTByAddress(ctx context.Context, address string) ([]obad
 		return nil, err
 	}
 
-	return resp.NFT, nil
+	return resp.GetNft(), nil
 
 }
 
@@ -94,7 +92,9 @@ func (c NodeClient) GetNFT(ctx context.Context, did string) (*obadatypes.NFT, er
 		return nil, err
 	}
 
-	return resp, nil
+	nft := resp.GetNft()
+
+	return &nft, nil
 
 }
 
@@ -112,11 +112,12 @@ func (c NodeClient) HasAccount(ctx context.Context, address string) (bool, error
 }
 
 // Account returns the account details for a gived address
-func (c NodeClient) Account(ctx context.Context, address string) (acc authtypes.AccountI, err error) {
+func (c NodeClient) Account(ctx context.Context, address string) (acc types.AccountI, err error) {
 	req := &authtypes.QueryAccountRequest{Address: address}
 
 	res, err := c.authClient.Account(ctx, req)
 	if err != nil {
+
 		statusError, ok := status.FromError(err)
 		if !ok || statusError.Code() != codes.NotFound {
 			return

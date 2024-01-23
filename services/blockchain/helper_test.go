@@ -38,7 +38,7 @@ func createTestService(t *testing.T) (*blockchain.Service, func()) { //nolint: g
 	lgr, err := logger.New("BLOCKCHAIN-SERVICE-TEST")
 	assert.NoError(t, err)
 
-	return blockchain.NewService(&nodeClient, lgr), func() {
+	return blockchain.NewService(&nodeClient, lgr, ""), func() {
 		testutil.StopBlockchain(t, c)
 	}
 }

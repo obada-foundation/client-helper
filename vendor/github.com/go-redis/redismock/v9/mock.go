@@ -12,12 +12,18 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type mockCmdable interface {
+	redis.Cmdable
+	redis.BitMapCmdable
+	redis.StreamCmdable
+}
+
 type mock struct {
 	ctx context.Context
 
 	parent *mock
 
-	factory  redis.Cmdable
+	factory  mockCmdable
 	client   redis.Cmdable
 	expected []expectation
 
@@ -459,6 +465,27 @@ func (m *mock) ExpectCommand() *ExpectedCommandsInfo {
 	return e
 }
 
+func (m *mock) ExpectCommandList(filter *redis.FilterBy) *ExpectedStringSlice {
+	e := &ExpectedStringSlice{}
+	e.cmd = m.factory.CommandList(m.ctx, filter)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectCommandGetKeys(commands ...interface{}) *ExpectedStringSlice {
+	e := &ExpectedStringSlice{}
+	e.cmd = m.factory.CommandGetKeys(m.ctx, commands...)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectCommandGetKeysAndFlags(commands ...interface{}) *ExpectedKeyFlags {
+	e := &ExpectedKeyFlags{}
+	e.cmd = m.factory.CommandGetKeysAndFlags(m.ctx, commands...)
+	m.pushExpect(e)
+	return e
+}
+
 func (m *mock) ExpectClientGetName() *ExpectedString {
 	e := &ExpectedString{}
 	e.cmd = m.factory.ClientGetName(m.ctx)
@@ -525,6 +552,13 @@ func (m *mock) ExpectExpire(key string, expiration time.Duration) *ExpectedBool 
 func (m *mock) ExpectExpireAt(key string, tm time.Time) *ExpectedBool {
 	e := &ExpectedBool{}
 	e.cmd = m.factory.ExpireAt(m.ctx, key, tm)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectExpireTime(key string) *ExpectedDuration {
+	e := &ExpectedDuration{}
+	e.cmd = m.factory.ExpireTime(m.ctx, key)
 	m.pushExpect(e)
 	return e
 }
@@ -616,6 +650,13 @@ func (m *mock) ExpectPExpire(key string, expiration time.Duration) *ExpectedBool
 func (m *mock) ExpectPExpireAt(key string, tm time.Time) *ExpectedBool {
 	e := &ExpectedBool{}
 	e.cmd = m.factory.PExpireAt(m.ctx, key, tm)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectPExpireTime(key string) *ExpectedDuration {
+	e := &ExpectedDuration{}
+	e.cmd = m.factory.PExpireTime(m.ctx, key)
 	m.pushExpect(e)
 	return e
 }
@@ -921,6 +962,13 @@ func (m *mock) ExpectBitPos(key string, bit int64, pos ...int64) *ExpectedInt {
 	return e
 }
 
+func (m *mock) ExpectBitPosSpan(key string, bit int8, start, end int64, span string) *ExpectedInt {
+	e := &ExpectedInt{}
+	e.cmd = m.factory.BitPosSpan(m.ctx, key, bit, start, end, span)
+	m.pushExpect(e)
+	return e
+}
+
 func (m *mock) ExpectBitField(key string, args ...interface{}) *ExpectedIntSlice {
 	e := &ExpectedIntSlice{}
 	e.cmd = m.factory.BitField(m.ctx, key, args...)
@@ -1075,6 +1123,13 @@ func (m *mock) ExpectBLPop(timeout time.Duration, keys ...string) *ExpectedStrin
 	return e
 }
 
+func (m *mock) ExpectBLMPop(timeout time.Duration, direction string, count int64, keys ...string) *ExpectedKeyValues {
+	e := &ExpectedKeyValues{}
+	e.cmd = m.factory.BLMPop(m.ctx, timeout, direction, count, keys...)
+	m.pushExpect(e)
+	return e
+}
+
 func (m *mock) ExpectBRPop(timeout time.Duration, keys ...string) *ExpectedStringSlice {
 	e := &ExpectedStringSlice{}
 	e.cmd = m.factory.BRPop(m.ctx, timeout, keys...)
@@ -1085,6 +1140,13 @@ func (m *mock) ExpectBRPop(timeout time.Duration, keys ...string) *ExpectedStrin
 func (m *mock) ExpectBRPopLPush(source, destination string, timeout time.Duration) *ExpectedString {
 	e := &ExpectedString{}
 	e.cmd = m.factory.BRPopLPush(m.ctx, source, destination, timeout)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectLCS(q *redis.LCSQuery) *ExpectedLCS {
+	e := &ExpectedLCS{}
+	e.cmd = m.factory.LCS(m.ctx, q)
 	m.pushExpect(e)
 	return e
 }
@@ -1134,6 +1196,13 @@ func (m *mock) ExpectLPop(key string) *ExpectedString {
 func (m *mock) ExpectLPopCount(key string, count int) *ExpectedStringSlice {
 	e := &ExpectedStringSlice{}
 	e.cmd = m.factory.LPopCount(m.ctx, key, count)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectLMPop(direction string, count int64, keys ...string) *ExpectedKeyValues {
+	e := &ExpectedKeyValues{}
+	e.cmd = m.factory.LMPop(m.ctx, direction, count, keys...)
 	m.pushExpect(e)
 	return e
 }
@@ -1611,9 +1680,30 @@ func (m *mock) ExpectBZPopMin(timeout time.Duration, keys ...string) *ExpectedZW
 	return e
 }
 
+func (m *mock) ExpectBZMPop(timeout time.Duration, order string, count int64, keys ...string) *ExpectedZSliceWithKey {
+	e := &ExpectedZSliceWithKey{}
+	e.cmd = m.factory.BZMPop(m.ctx, timeout, order, count, keys...)
+	m.pushExpect(e)
+	return e
+}
+
 func (m *mock) ExpectZAdd(key string, members ...redis.Z) *ExpectedInt {
 	e := &ExpectedInt{}
 	e.cmd = m.factory.ZAdd(m.ctx, key, members...)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectZAddLT(key string, members ...redis.Z) *ExpectedInt {
+	e := &ExpectedInt{}
+	e.cmd = m.factory.ZAddLT(m.ctx, key, members...)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectZAddGT(key string, members ...redis.Z) *ExpectedInt {
+	e := &ExpectedInt{}
+	e.cmd = m.factory.ZAddGT(m.ctx, key, members...)
 	m.pushExpect(e)
 	return e
 }
@@ -1698,6 +1788,13 @@ func (m *mock) ExpectZInterCard(limit int64, keys ...string) *ExpectedInt {
 func (m *mock) ExpectZInterStore(destination string, store *redis.ZStore) *ExpectedInt {
 	e := &ExpectedInt{}
 	e.cmd = m.factory.ZInterStore(m.ctx, destination, store)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectZMPop(order string, count int64, keys ...string) *ExpectedZSliceWithKey {
+	e := &ExpectedZSliceWithKey{}
+	e.cmd = m.factory.ZMPop(m.ctx, order, count, keys...)
 	m.pushExpect(e)
 	return e
 }
@@ -2278,6 +2375,20 @@ func (m *mock) ExpectClusterSlots() *ExpectedClusterSlots {
 	return e
 }
 
+func (m *mock) ExpectClusterShards() *ExpectedClusterShards {
+	e := &ExpectedClusterShards{}
+	e.cmd = m.factory.ClusterShards(m.ctx)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectClusterLinks() *ExpectedClusterLinks {
+	e := &ExpectedClusterLinks{}
+	e.cmd = m.factory.ClusterLinks(m.ctx)
+	m.pushExpect(e)
+	return e
+}
+
 func (m *mock) ExpectClusterNodes() *ExpectedString {
 	e := &ExpectedString{}
 	e.cmd = m.factory.ClusterNodes(m.ctx)
@@ -2481,6 +2592,94 @@ func (m *mock) ExpectGeoDist(key string, member1, member2, unit string) *Expecte
 func (m *mock) ExpectGeoHash(key string, members ...string) *ExpectedStringSlice {
 	e := &ExpectedStringSlice{}
 	e.cmd = m.factory.GeoHash(m.ctx, key, members...)
+	m.pushExpect(e)
+	return e
+}
+
+// ----------------------------------------------------------------------------------------------------
+
+func (m *mock) ExpectFunctionLoad(code string) *ExpectedString {
+	e := &ExpectedString{}
+	e.cmd = m.factory.FunctionLoad(m.ctx, code)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectFunctionLoadReplace(code string) *ExpectedString {
+	e := &ExpectedString{}
+	e.cmd = m.factory.FunctionLoadReplace(m.ctx, code)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectFunctionDelete(libName string) *ExpectedString {
+	e := &ExpectedString{}
+	e.cmd = m.factory.FunctionDelete(m.ctx, libName)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectFunctionFlush() *ExpectedString {
+	e := &ExpectedString{}
+	e.cmd = m.factory.FunctionFlush(m.ctx)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectFunctionFlushAsync() *ExpectedString {
+	e := &ExpectedString{}
+	e.cmd = m.factory.FunctionFlushAsync(m.ctx)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectFunctionList(q redis.FunctionListQuery) *ExpectedFunctionList {
+	e := &ExpectedFunctionList{}
+	e.cmd = m.factory.FunctionList(m.ctx, q)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectFunctionKill() *ExpectedString {
+	e := &ExpectedString{}
+	e.cmd = m.factory.FunctionKill(m.ctx)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectFunctionDump() *ExpectedString {
+	e := &ExpectedString{}
+	e.cmd = m.factory.FunctionDump(m.ctx)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectFunctionRestore(libDump string) *ExpectedString {
+	e := &ExpectedString{}
+	e.cmd = m.factory.FunctionRestore(m.ctx, libDump)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectFCall(function string, keys []string, args ...interface{}) *ExpectedCmd {
+	e := &ExpectedCmd{}
+	e.cmd = m.factory.FCall(m.ctx, function, keys, args...)
+	m.pushExpect(e)
+	return e
+}
+
+func (m *mock) ExpectFCallRo(function string, keys []string, args ...interface{}) *ExpectedCmd {
+	e := &ExpectedCmd{}
+	e.cmd = m.factory.FCallRo(m.ctx, function, keys, args...)
+	m.pushExpect(e)
+	return e
+}
+
+// ------------------------------------------------------------------------
+
+func (m *mock) ExpectACLDryRun(username string, command ...interface{}) *ExpectedString {
+	e := &ExpectedString{}
+	e.cmd = m.factory.ACLDryRun(m.ctx, username, command...)
 	m.pushExpect(e)
 	return e
 }

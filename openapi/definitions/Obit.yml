@@ -21,12 +21,16 @@ DeviceDocument:
   type: object
   required:
     - name
+    - type
     - document_file
   properties:
     name:
       type: string
       description: Associative name of device document
       example: "Link to device wipe report"
+    type:
+      type: string
+      description: Document type
     document_file:
       type: string
       format: base64
@@ -130,9 +134,20 @@ Obits:
           type: integer
         last_page:
           type: integer
-
+          
 ObitHistory:
-  description: New Obit request payload.
+  description: Represent Obit metadata history
+  type: object
+  additionalProperties:
+    type: object
+    properties:
+      version_hash:
+        type: string
+      root_hash:
+        type: string
+          
+ObitHistoryB:
+  description: Represent Obit metadata history
   type: object
   properties:
     obit_did:

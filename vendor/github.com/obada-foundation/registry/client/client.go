@@ -3,14 +3,14 @@ package client
 import (
 	"context"
 
-	acc "github.com/obada-foundation/registry/api/pb/v1/account"
+	"github.com/obada-foundation/registry/api/pb/v1/account"
 	"github.com/obada-foundation/registry/api/pb/v1/diddoc"
 	"google.golang.org/grpc"
 )
 
 // Client is allows communication with grpc server
 type Client interface {
-	acc.AccountClient
+	account.AccountClient
 	diddoc.DIDDocClient
 
 	Close() error
@@ -18,7 +18,7 @@ type Client interface {
 
 type grpcClient struct {
 	cc      *grpc.ClientConn
-	account acc.AccountClient
+	account account.AccountClient
 	diddoc  diddoc.DIDDocClient
 }
 
@@ -26,18 +26,18 @@ type grpcClient struct {
 func NewClient(conn *grpc.ClientConn) Client {
 	return grpcClient{
 		cc:      conn,
-		account: acc.NewAccountClient(conn),
+		account: account.NewAccountClient(conn),
 		diddoc:  diddoc.NewDIDDocClient(conn),
 	}
 }
 
 // GetPublicKey register a new public key
-func (c grpcClient) GetPublicKey(ctx context.Context, msg *acc.GetPublicKeyRequest, opts ...grpc.CallOption) (*acc.GetPublicKeyResponse, error) {
+func (c grpcClient) GetPublicKey(ctx context.Context, msg *account.GetPublicKeyRequest, opts ...grpc.CallOption) (*account.GetPublicKeyResponse, error) {
 	return c.account.GetPublicKey(ctx, msg, opts...)
 }
 
 // RegisterAccount register a new public key
-func (c grpcClient) RegisterAccount(ctx context.Context, msg *acc.RegisterAccountRequest, opts ...grpc.CallOption) (*acc.RegisterAccountResponse, error) {
+func (c grpcClient) RegisterAccount(ctx context.Context, msg *account.RegisterAccountRequest, opts ...grpc.CallOption) (*account.RegisterAccountResponse, error) {
 	return c.account.RegisterAccount(ctx, msg, opts...)
 }
 
@@ -59,6 +59,11 @@ func (c grpcClient) GetMetadataHistory(ctx context.Context, msg *diddoc.GetMetad
 // SaveMetadata saves DID document metadata
 func (c grpcClient) SaveMetadata(ctx context.Context, msg *diddoc.SaveMetadataRequest, opts ...grpc.CallOption) (*diddoc.SaveMetadataResponse, error) {
 	return c.diddoc.SaveMetadata(ctx, msg, opts...)
+}
+
+// SaveVerificationMethods saves verification methods
+func (c grpcClient) SaveVerificationMethods(ctx context.Context, msg *diddoc.MsgSaveVerificationMethods, opts ...grpc.CallOption) (*diddoc.SaveVerificationMethodsResponse, error) {
+	return c.diddoc.SaveVerificationMethods(ctx, msg, opts...)
 }
 
 // Close close all client connections
