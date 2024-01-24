@@ -6,6 +6,9 @@ Document:
       type: string
       description: Associative name of file
       example: "Link to device wipe report"
+    type:
+      type: string
+      description: Document type
     uri:
       type: string
       description: Link to the document
@@ -38,7 +41,44 @@ DeviceDocument:
       type: boolean
       description: If true then client helper will encrypt document with account key
       default: false
-      
+
+BatchSaveObitRequest:
+  description: Request to save a batch of Obits
+  type: object
+  required:
+    - obits
+  properties:
+    address:
+      type: string   
+    should_mint:
+      type: boolean
+      description: If true then client helper will mint NFTs for each Obit
+      default: false
+    obits:
+      type: array
+      items:
+        type: object
+        required:
+          - manufacturer
+          - part_number
+          - serial_number
+        properties:
+          manufacturer:
+            type: string
+            description: "Waiting more specific details from Rohi"
+            example: "Sony"
+          part_number:
+            type: string
+            description: "Manufacturer provided. In cases where no part number is provided for the product, use model, or the most specific ID available from the manufacturer. MWCN2LL/A (an iPhone 11 Pro, Silver, 256GB, model A2160)"
+            example: "MWCN2LL/A"
+          serial_number:
+            type: string
+            description: Serial number hashed with sha256 hash function
+            example: "f6fc84c9f21c24907d6bee6eec38cabab5fa9a7be8c4a7827fe9e56f245bd2d5"
+          documents:
+            type: array
+            items:
+              $ref: "#/DeviceDocument"
       
 SaveObitRequest:
   description: Request to save Obit
@@ -98,7 +138,7 @@ Obit:
       type: string
       description: "Manufacturer provided. In cases where no part number is provided for the product, use model, or the most specific ID available from the manufacturer. MWCN2LL/A (an iPhone 11 Pro, Silver, 256GB, model A2160)"
       example: "MWCN2LL/A"
-    serial_number_hash:
+    serial_number:
       type: string
       description: Serial number hashed with sha256 hash function
       example: "f6fc84c9f21c24907d6bee6eec38cabab5fa9a7be8c4a7827fe9e56f245bd2d5"

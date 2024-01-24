@@ -70,6 +70,13 @@ type DeviceDocument struct {
 }
 
 // SaveDevice request data for saving device information
+type BatchSaveDevice struct {
+	ShouldMint bool         `json:"should_mint"`
+	Obits      []SaveDevice `json:"obits"`
+	Address    string       `json:"address" validate:"required"`
+}
+
+// SaveDevice request data for saving device information
 type SaveDevice struct {
 	SerialNumber string               `json:"serial_number" validate:"required"`
 	Manufacturer string               `json:"manufacturer"  validate:"required"`
@@ -93,4 +100,9 @@ type Device struct {
 // SendNFT request data for sending NFT
 type SendNFT struct {
 	ReceiverArr string `json:"receiver"`
+}
+
+// MintBatchNFT request data for minting batch NFTs
+type MintBatchNFT struct {
+	Nfts []string `json:"nfts"`
 }

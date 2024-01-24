@@ -8,6 +8,29 @@ SendNFTRequest:
       type: string
       description: OBADA blockchain receiver address
 
+BatchSendNFTRequest:
+  description: Batch transfer NFT payload
+  type: object
+  required:
+    - receiver
+  properties:
+    receiver:
+      type: string
+      description: OBADA blockchain receiver address
+    nfts:
+      type: array
+      items:
+        type: string
+
+BatchMintNFTRequest:
+  description: Batch mint NFT payload
+  type: object
+  properties:
+    nfts:
+      type: array
+      items:
+        type: string
+
 NFT:
   description: OBADA NFT
   type: object

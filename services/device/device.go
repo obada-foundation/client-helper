@@ -28,7 +28,7 @@ import (
 	"github.com/obada-foundation/sdkgo/base58"
 	sdkdid "github.com/obada-foundation/sdkgo/did"
 	"github.com/obada-foundation/sdkgo/encryption"
-	"github.com/tendermint/tm-db"
+	db "github.com/tendermint/tm-db"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -549,6 +549,22 @@ func (ds Service) Get(ctx context.Context, key string) (svcs.Device, error) {
 	}
 
 	return ds.GetByDID(ctx, key)
+}
+
+// GetByDIDs fetches many devices by DIDs
+func (ds Service) GetByDIDs(ctx context.Context, dids []string) ([]svcs.Device, error) {
+	devices := make([]svcs.Device, 0, len(dids))
+
+	for _, did := range dids {
+		device, err := ds.GetByDID(ctx, did)
+		if err != nil {
+			return devices, err
+		}
+
+		devices = append(devices, device)
+	}
+
+	return devices, nil
 }
 
 // GetByDIDUnsafe fetches device by DID without checking if the device belongs to the user

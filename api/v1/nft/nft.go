@@ -67,6 +67,31 @@ func (h Handlers) Mint(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	return web.RespondWithNoContent(ctx, w, http.StatusCreated)
 }
 
+// BatchMint mints a batch of NFTs
+func (h Handlers) BatchMint(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	var req services.MintBatchNFT
+
+	if err := web.Decode(r, &req); err != nil {
+		return fmt.Errorf("unable to decode request data: %w", err)
+	}
+
+	devices, err := h.DeviceSvc.GetByDIDs(ctx, req.Nfts)
+	if err != nil {
+		return err
+	}
+
+	privKey, err := h.AccountSvc.GetAccountPrivateKey(ctx, devices[0].Address)
+	if err != nil {
+		return err
+	}
+
+	if err := h.BlockchainSvc.BatchMintNFT(ctx, devices, privKey); err != nil {
+		return err
+	}
+
+	return web.RespondWithNoContent(ctx, w, http.StatusCreated)
+}
+
 // UpdateMetadata updates NFT metadata
 func (h Handlers) UpdateMetadata(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	key := web.Param(r, "key")

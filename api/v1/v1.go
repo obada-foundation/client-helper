@@ -67,6 +67,7 @@ func Routes(app *web.App, cfg Config) {
 	app.Handle(http.MethodGet, version, "/obits/:key/history", obitsGrp.History, authenticate)
 	app.Handle(http.MethodGet, version, "/obits", obitsGrp.Search, authenticate)
 	app.Handle(http.MethodPost, version, "/obits", obitsGrp.Save, authenticate)
+	app.Handle(http.MethodPost, version, "/obits/batch", obitsGrp.BatchSave, authenticate)
 
 	obitGrp := obit.Handlers{
 		ObitSvc: cfg.ObitSvc,
@@ -84,6 +85,7 @@ func Routes(app *web.App, cfg Config) {
 
 	app.Handle(http.MethodGet, version, "/nft/:key", nftGrp.NFT, authenticate)
 	app.Handle(http.MethodPost, version, "/nft/:key/mint", nftGrp.Mint, authenticate)
+	app.Handle(http.MethodPost, version, "/nft/batch-mint", nftGrp.BatchMint, authenticate)
 	app.Handle(http.MethodPost, version, "/nft/:key/metadata", nftGrp.UpdateMetadata, authenticate)
 	app.Handle(http.MethodPost, version, "/nft/:key/send", nftGrp.Transfer, authenticate)
 }

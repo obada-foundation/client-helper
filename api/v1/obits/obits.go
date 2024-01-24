@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/obada-foundation/client-helper/services"
 	"github.com/obada-foundation/client-helper/services/account"
@@ -52,6 +54,59 @@ func (h Handlers) Save(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	}
 
 	return web.Respond(ctx, w, d, http.StatusOK)
+}
+
+// BatchSave saves a batch of obits into local database
+func (h Handlers) BatchSave(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	var batchSaveRequest services.BatchSaveDevice
+
+	if err := web.Decode(r, &batchSaveRequest); err != nil {
+		return fmt.Errorf("unable to decode request data: %w", err)
+	}
+
+	numCPU := runtime.NumCPU()
+	errs := make(chan error, numCPU)
+	results := make(chan services.Device, numCPU)
+
+	privKey, err := h.AccountSvc.GetAccountPrivateKey(ctx, batchSaveRequest.Address)
+	if err != nil {
+		return err
+	}
+
+	var wg sync.WaitGroup
+	for i, saveRequest := range batchSaveRequest.Obits {
+		wg.Add(1)
+		go func(i int, saveRequest services.SaveDevice) {
+			defer wg.Done()
+			saveRequest.Address = batchSaveRequest.Address
+			d, err := h.DeviceSvc.Save(ctx, saveRequest, privKey)
+			if err != nil {
+				errs <- err
+				return
+			}
+			results <- d
+		}(i, saveRequest)
+	}
+
+	go func() {
+		wg.Wait()
+		close(errs)
+		close(results)
+	}()
+
+	devices := make([]services.Device, 0, len(batchSaveRequest.Obits))
+	for d := range results {
+		devices = append(devices, d)
+	}
+
+	// Check if any errors occurred during the parallel execution
+	for err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+
+	return web.Respond(ctx, w, devices, http.StatusOK)
 }
 
 // Search returns a list of obits by giver query

@@ -328,6 +328,34 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /obits/batch:
+    post:
+      summary: Batch Save Obit
+      description: 'Returns Obit with updated checksum if data was changed.'
+      operationId: BatchSave
+      tags:
+        - Obit
+      requestBody:
+        content:
+          application/json::
+            schema:
+              $ref: '#/components/schemas/BatchSaveObitRequest'
+      responses:
+        "200":
+          description: List of obits with pagination responded by given arguments.
+          content:
+            application/json:
+              schema:
+                title: BatchSaveObitResponse
+                type: array
+                items:
+                  $ref: "#/components/schemas/Obit"
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+
   /obits:
     post:
       summary: Save Obit
@@ -447,6 +475,25 @@ paths:
           $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalServerError"
+
+  /nft/batch-mint:
+    post:
+      tags:
+        - NFT
+      summary: Mints batches of NFT
+      operationId: BatchMint
+      requestBody:
+        content:
+          application/json:
+            schema:
+               $ref: '#/components/schemas/BatchMintNFTRequest'
+      responses:
+        "201":
+          description: Succesfully minted
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
           
   /nft/{key}/mint:
     post:
@@ -489,6 +536,25 @@ paths:
           description: Metadata succesfully updated
         "404":
           $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /nft/batch-send:
+    post:
+      tags:
+        - NFT
+      summary: Send a batch of NFTs to another address
+      operationId: BatchSend
+      requestBody:
+        content:
+          application/json:
+            schema:
+               $ref: '#/components/schemas/BatchSendNFTRequest'
+      responses:
+        "204":
+          description: Succesfully transfered
+        "422":
+          $ref: "#/components/responses/UnprocessableEntity"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -551,10 +617,16 @@ components:
       $ref: "definitions/Obit.yml#/ObitHistory"
     SaveObitRequest:
       $ref: "definitions/Obit.yml#/SaveObitRequest"
+    BatchSaveObitRequest:
+      $ref: "definitions/Obit.yml#/BatchSaveObitRequest"
     NFT:
       $ref: "definitions/NFT.yml#/NFT"
     SendNFTRequest:
       $ref: "definitions/NFT.yml#/SendNFTRequest"
+    BatchSendNFTRequest:
+      $ref: "definitions/NFT.yml#/BatchSendNFTRequest"
+    BatchMintNFTRequest:
+      $ref: "definitions/NFT.yml#/BatchMintNFTRequest"
 
   responses:
     Account:

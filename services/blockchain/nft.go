@@ -89,6 +89,27 @@ func (bs Service) buildMintMsg(d services.Device, address string) *types.MsgMint
 	}
 }
 
+func (bs Service) buildBatchMintMsg(devices []services.Device, address string) *types.MsgBatchMintNFT {
+
+	nfts := make([]types.MsgBatchNFT, len(devices))
+
+	for _, d := range devices {
+		URI := fmt.Sprintf("%s/api/v1.0/diddoc/%s", bs.registryURL, d.DID)
+
+		nfts = append(nfts, types.MsgBatchNFT{
+			Id:      d.DID,
+			Uri:     URI,
+			Usn:     d.Usn,
+			UriHash: d.Checksum,
+		})
+	}
+
+	return &types.MsgBatchMintNFT{
+		Creator: address,
+		Nft:     nfts,
+	}
+}
+
 // EditNFTMetadata edits NFT metadata.
 func (bs Service) EditNFTMetadata(ctx context.Context, d services.Device, privKey cryptotypes.PrivKey) error {
 	accAddress := sdk.AccAddress(privKey.PubKey().Address().Bytes()).String()
@@ -147,6 +168,34 @@ func (bs Service) MintNFT(ctx context.Context, d services.Device, privKey crypto
 		return err
 	}
 	bs.logger.Info("NFT was minted", resp)
+
+	return nil
+}
+
+// BatchMintNFT mints many NFTs fron the batch.
+func (bs Service) BatchMintNFT(ctx context.Context, ds []services.Device, privKey cryptotypes.PrivKey) error {
+	accAddress := sdk.AccAddress(privKey.PubKey().Address().Bytes()).String()
+
+	ok, err := bs.nodeClient.HasAccount(ctx, accAddress)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return ErrInsufficientFunds
+	}
+
+	msg := bs.buildBatchMintMsg(ds, accAddress)
+
+	resp, err := bs.nodeClient.SendTx(ctx, msg, privKey)
+	if err != nil {
+		if errors.Is(err, obadanode.ErrInsufficientFunds) {
+			return ErrInsufficientFunds
+		}
+
+		return err
+	}
+	bs.logger.Info("NFT batch was minted", resp)
 
 	return nil
 }
