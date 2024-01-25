@@ -47,7 +47,7 @@ type Client interface {
 	Account(ctx context.Context, address string) (acc sdk.AccountI, err error)
 
 	// Tx methods
-	SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey) (*ctypes.ResultBroadcastTx, error)
+	SendTx(ctx context.Context, cnf TxCustomConfig) (*ctypes.ResultBroadcastTx, error)
 
 	// CalculateGas returns the gas needed to execute the given message
 	CalculateGas(ctx context.Context, msgs ...sdk.Msg) (*tx.SimulateResponse, uint64, error)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	sdkmath "cosmossdk.io/math"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -39,7 +40,14 @@ func (bs Service) Send(ctx context.Context, account services.Account, toAddress,
 
 	msg := types.NewMsgSend(fromAddress, recepientAddress, coins)
 
-	resp, err := bs.nodeClient.SendTx(ctx, msg, privKey)
+	txConf := obadanode.TxCustomConfig{
+		Msg:       msg,
+		GasLimit:  uint64(MinGasLimit),
+		FeeAmount: sdkmath.NewInt(MinGasLimit),
+		Priv:      privKey,
+	}
+
+	resp, err := bs.nodeClient.SendTx(ctx, txConf)
 	if err != nil {
 		if errors.Is(err, obadanode.ErrInsufficientFunds) {
 			return ErrInsufficientFunds

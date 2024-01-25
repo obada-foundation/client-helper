@@ -17,6 +17,15 @@ import (
 	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 )
 
+// TxCustomConfig defines a struct for configuring a TxBuilder.
+type TxCustomConfig struct {
+	Msg       sdk.Msg
+	Priv      cryptotypes.PrivKey
+	AccSeq    uint64
+	GasLimit  uint64
+	FeeAmount sdkmath.Int
+}
+
 // BuildUnsignedTx builds a transaction to be signed given a set of messages.
 // Once created, the fee, memo, and messages are set.
 func (c NodeClient) BuildUnsignedTx(msgs ...sdk.Msg) (client.TxBuilder, error) {
@@ -86,14 +95,16 @@ func (c NodeClient) CalculateGas(ctx context.Context, msgs ...sdk.Msg,
 }
 
 // SendTx sends a transaction to the node.
-func (c NodeClient) SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey) (*ctypes.ResultBroadcastTx, error) {
-	accAddress := sdk.AccAddress(priv.PubKey().Address().Bytes()).String()
+func (c NodeClient) SendTx(ctx context.Context, cnf TxCustomConfig) (*ctypes.ResultBroadcastTx, error) {
+	accAddress := sdk.AccAddress(cnf.Priv.PubKey().Address().Bytes()).String()
 	nonce, err := c.Nonce(ctx, accAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	tsn, err := c.BuildTx(ctx, msg, priv, nonce)
+	cnf.AccSeq = nonce
+
+	tsn, err := c.BuildTx(ctx, cnf)
 	if err != nil {
 		return nil, err
 	}
@@ -125,30 +136,33 @@ func (c NodeClient) SendTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.Pr
 }
 
 // BuildTx builds a transaction given a set of messages and a private key.
-func (c NodeClient) BuildTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.PrivKey, accSeq uint64) (authsigning.Tx, error) {
+func (c NodeClient) BuildTx(ctx context.Context, cnf TxCustomConfig) (authsigning.Tx, error) {
 	txBuilder := c.txConfig.NewTxBuilder()
 	txBuilder.GetTx().GetFee()
+	privK := cnf.Priv
+	pubK := privK.PubKey()
 
-	err := txBuilder.SetMsgs(msg)
+	err := txBuilder.SetMsgs(cnf.Msg)
 	if err != nil {
 		return nil, err
 	}
-	txBuilder.SetGasLimit(uint64(100000))
-	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("rohi", sdkmath.NewInt(100000))))
+	txBuilder.SetGasLimit(cnf.GasLimit)
+	txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewCoin("rohi", cnf.FeeAmount)))
+	//sdk.NewCoins(sdk.NewCoin("rohi", sdkmath.NewInt(100000))))
 
 	// First round: we gather all the signer infos. We use the "set empty signature" hack to do that.
 	if er := txBuilder.SetSignatures(signing.SignatureV2{
-		PubKey: priv.PubKey(),
+		PubKey: cnf.Priv.PubKey(),
 		Data: &signing.SingleSignatureData{
 			SignMode:  signing.SignMode(c.txConfig.SignModeHandler().DefaultMode()),
 			Signature: nil,
 		},
-		Sequence: accSeq,
+		Sequence: cnf.AccSeq,
 	}); er != nil {
 		return nil, er
 	}
 
-	accAddress := sdk.AccAddress(priv.PubKey().Address().Bytes()).String()
+	accAddress := sdk.AccAddress(pubK.Address().Bytes()).String()
 
 	acc, err := c.Account(ctx, accAddress)
 	if err != nil {
@@ -160,8 +174,8 @@ func (c NodeClient) BuildTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.P
 		Address:       accAddress,
 		ChainID:       c.chainID,
 		AccountNumber: acc.GetAccountNumber(),
-		Sequence:      accSeq,
-		PubKey:        priv.PubKey(),
+		Sequence:      cnf.AccSeq,
+		PubKey:        pubK,
 	}
 
 	sigV2, err := tx.SignWithPrivKey(
@@ -169,9 +183,9 @@ func (c NodeClient) BuildTx(ctx context.Context, msg sdk.Msg, priv cryptotypes.P
 		signing.SignMode(c.txConfig.SignModeHandler().DefaultMode()),
 		signerData,
 		txBuilder,
-		priv,
+		privK,
 		c.txConfig,
-		accSeq,
+		cnf.AccSeq,
 	)
 	if err != nil {
 		return nil, err

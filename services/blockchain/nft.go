@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	sdkmath "cosmossdk.io/math"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/protobuf/jsonpb" //nolint:staticcheck // wait for refactoring
@@ -16,6 +17,8 @@ import (
 )
 
 type nftAnyResolver struct{}
+
+const MinGasLimit = 100000
 
 // Resolve implements jsonpb.AnyResolver interface.
 func (m *nftAnyResolver) Resolve(_ string) (proto.Message, error) {
@@ -91,7 +94,7 @@ func (bs Service) buildMintMsg(d services.Device, address string) *types.MsgMint
 
 func (bs Service) buildBatchMintMsg(devices []services.Device, address string) *types.MsgBatchMintNFT {
 
-	nfts := make([]types.MsgBatchNFT, len(devices))
+	nfts := make([]types.MsgBatchNFT, 0, len(devices))
 
 	for _, d := range devices {
 		URI := fmt.Sprintf("%s/api/v1.0/diddoc/%s", bs.registryURL, d.DID)
@@ -131,7 +134,14 @@ func (bs Service) EditNFTMetadata(ctx context.Context, d services.Device, privKe
 		UriHash: d.Checksum,
 	}
 
-	resp, err := bs.nodeClient.SendTx(ctx, msg, privKey)
+	txConf := obadanode.TxCustomConfig{
+		Msg:       msg,
+		GasLimit:  uint64(MinGasLimit),
+		FeeAmount: sdkmath.NewInt(MinGasLimit),
+		Priv:      privKey,
+	}
+
+	resp, err := bs.nodeClient.SendTx(ctx, txConf)
 	if err != nil {
 		if errors.Is(err, obadanode.ErrInsufficientFunds) {
 			return ErrInsufficientFunds
@@ -159,7 +169,14 @@ func (bs Service) MintNFT(ctx context.Context, d services.Device, privKey crypto
 
 	msg := bs.buildMintMsg(d, accAddress)
 
-	resp, err := bs.nodeClient.SendTx(ctx, msg, privKey)
+	txConf := obadanode.TxCustomConfig{
+		Msg:       msg,
+		GasLimit:  uint64(MinGasLimit),
+		FeeAmount: sdkmath.NewInt(MinGasLimit),
+		Priv:      privKey,
+	}
+
+	resp, err := bs.nodeClient.SendTx(ctx, txConf)
 	if err != nil {
 		if errors.Is(err, obadanode.ErrInsufficientFunds) {
 			return ErrInsufficientFunds
@@ -187,7 +204,16 @@ func (bs Service) BatchMintNFT(ctx context.Context, ds []services.Device, privKe
 
 	msg := bs.buildBatchMintMsg(ds, accAddress)
 
-	resp, err := bs.nodeClient.SendTx(ctx, msg, privKey)
+	multiplier := len(msg.GetNft())
+
+	txConf := obadanode.TxCustomConfig{
+		Msg:       msg,
+		GasLimit:  uint64(MinGasLimit * multiplier),
+		FeeAmount: sdkmath.NewInt(MinGasLimit * int64(multiplier)),
+		Priv:      privKey,
+	}
+
+	resp, err := bs.nodeClient.SendTx(ctx, txConf)
 	if err != nil {
 		if errors.Is(err, obadanode.ErrInsufficientFunds) {
 			return ErrInsufficientFunds
@@ -219,7 +245,14 @@ func (bs Service) TransferNFT(ctx context.Context, did, receiverAddr string, pri
 		Receiver: receiverAddr,
 	}
 
-	resp, err := bs.nodeClient.SendTx(ctx, msg, privKey)
+	txConf := obadanode.TxCustomConfig{
+		Msg:       msg,
+		GasLimit:  uint64(MinGasLimit),
+		FeeAmount: sdkmath.NewInt(MinGasLimit),
+		Priv:      privKey,
+	}
+
+	resp, err := bs.nodeClient.SendTx(ctx, txConf)
 	if err != nil {
 		if errors.Is(err, obadanode.ErrInsufficientFunds) {
 			return ErrInsufficientFunds
