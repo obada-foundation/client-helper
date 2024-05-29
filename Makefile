@@ -16,7 +16,23 @@ docker/build:
 openapi/python/clone: ## Clone github.com/obada-foundation/client-api-library-python if it does not exists
 	if [ ! -d "./client-api-library-python" ]; then git clone -b main $(GITHUB_CLONE)/client-api-library-python ./client-api-library-python; fi
 
-openapi/gen: openapi/python/gen openapi/csharp/gen openapi/node/gen openapi/go/gen openapi/php/gen
+openapi/gen: openapi/python/gen openapi/csharp/gen openapi/node/gen openapi/go/gen openapi/php/gen openapi/gen/swagger
+
+openapi/gen/swagger:
+	docker run -it \
+		--rm \
+                --user $$(id -u):$$(id -g) \
+		-v $$(pwd)/openapi:/openapi \
+		-w /openapi \
+		obada/swagger-converter sh -c "openapi bundle spec.openapi.yaml > bundle.openapi.yaml"
+
+	docker run -it \
+		--rm \
+                --user $$(id -u):$$(id -g) \
+		-v $$(pwd)/openapi:/openapi \
+		-v $$(pwd)/swagger:/swagger \
+		obada/swagger-converter sh -c "api-spec-converter -f openapi_3 -t swagger_2 --syntax json /openapi/bundle.openapi.yaml > /swagger/bundle.swagger.json"
+
 
 openapi/python/gen: openapi/python/clone
 	rm -rf $$(pwd)/client-api-library-python/*

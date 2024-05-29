@@ -1,0 +1,2027 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "contact": {
+      "email": "techops@obada.io",
+      "name": "Obada Dev Team",
+      "url": "https://www.obada.io"
+    },
+    "termsOfService": "https://www.obada.io/terms/",
+    "title": "OBADA API",
+    "version": "0.0.1"
+  },
+  "host": "obs.node.obada.io",
+  "basePath": "/",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/accounts": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns all OBADA accounts associated with client-helper profile",
+            "schema": {
+              "$ref": "#/definitions/Accounts"
+            }
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "accounts",
+        "summary": "Returns a list of OBADA accounts"
+      }
+    },
+    "/accounts/export-account": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/ExportAccountRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Single OBADA account (private key) encrypted with password",
+            "schema": {
+              "$ref": "#/definitions/ExportAccountResponse"
+            }
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "409": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/WalletExistsError"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "exportAccount",
+        "summary": "Export OBADA account (private key) from client-helper"
+      }
+    },
+    "/accounts/import-account": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/ImportAccountRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Account was imported"
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "409": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/WalletExistsError"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "importAccount",
+        "summary": "Imports an existing OBADA account (private key) to the client-helper user profile"
+      }
+    },
+    "/accounts/import-wallet": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/NewMnemonic"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "HD wallet was imported"
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "409": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/WalletExistsError"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "importWallet",
+        "summary": "Imports an existing HD wallet to the client-helper user profile"
+      }
+    },
+    "/accounts/mnemonic": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "New mnemonic phrase for wallet seeding",
+            "schema": {
+              "$ref": "#/definitions/NewMnemonic"
+            }
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "getMnemonic",
+        "summary": "Fetching an existing mnemonic phrase"
+      }
+    },
+    "/accounts/new-account": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/AccountRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Account was created"
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "newAccount",
+        "summary": "Creates a new OBADA account from HD wallet master key"
+      }
+    },
+    "/accounts/new-mnemonic": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "New mnemonic phrase for wallet seeding",
+            "schema": {
+              "$ref": "#/definitions/NewMnemonic"
+            }
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "newMnemonic",
+        "summary": "Generate a new mnemonic phrase for seeding wallet"
+      }
+    },
+    "/accounts/new-wallet": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/NewMnemonic"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "HD wallet was created"
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "newWallet",
+        "summary": "Creates profile HD wallet"
+      }
+    },
+    "/accounts/register": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/RegisterRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created profile response",
+            "schema": {
+              "$ref": "#/definitions/Profile"
+            }
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "description": "Creates a new profile, using JWT uid as a internal user id",
+        "operationId": "register",
+        "summary": "Register a new client-helper user profile"
+      }
+    },
+    "/accounts/{address}": {
+      "parameters": [
+        {
+          "description": "OBADA address",
+          "in": "path",
+          "name": "address",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Account was deleted"
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "deleteImportedAccount",
+        "summary": "Delete imported account"
+      },
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns OBADA account",
+            "schema": {
+              "$ref": "#/definitions/Account"
+            }
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "account",
+        "summary": "Fetches an information about single account"
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/AccountRequest"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Account was updated"
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "updateAccount",
+        "summary": "Sets account specific information"
+      }
+    },
+    "/accounts/{address}/send-coins": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "OBADA address",
+            "in": "path",
+            "name": "address",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/SendCoinsRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Coins were sent"
+          },
+          "401": {
+            "description": "The request is not authorized.",
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Accounts"
+        ],
+        "operationId": "sendCoins",
+        "summary": "Send coins from selected account"
+      }
+    },
+    "/nft/batch-mint": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/BatchMintNFTRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Succesfully minted"
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "NFT"
+        ],
+        "operationId": "BatchMint",
+        "summary": "Mints batches of NFT"
+      }
+    },
+    "/nft/batch-send": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/BatchSendNFTRequest"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Succesfully transfered"
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "NFT"
+        ],
+        "operationId": "BatchSend",
+        "summary": "Send a batch of NFTs to another address"
+      }
+    },
+    "/nft/{key}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "The given ObitDID or USN argument",
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NFT hosted by blockchain",
+            "schema": {
+              "$ref": "#/definitions/NFT"
+            }
+          },
+          "404": {
+            "description": "The requested resource could not be found.",
+            "schema": {
+              "$ref": "#/definitions/NotFound"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "NFT"
+        ],
+        "operationId": "nft",
+        "summary": "Fetch NFT from OBADA blockchain Node"
+      }
+    },
+    "/nft/{key}/metadata": {
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "The given ObitDID or USN argument",
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Metadata succesfully updated"
+          },
+          "404": {
+            "description": "The requested resource could not be found.",
+            "schema": {
+              "$ref": "#/definitions/NotFound"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "NFT"
+        ],
+        "operationId": "UpdateMetadata",
+        "summary": "Update NFT metadata"
+      }
+    },
+    "/nft/{key}/mint": {
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "The given ObitDID or USN argument",
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Succesfully minted"
+          },
+          "404": {
+            "description": "The requested resource could not be found.",
+            "schema": {
+              "$ref": "#/definitions/NotFound"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "NFT"
+        ],
+        "operationId": "Mint",
+        "summary": "Mints NFT"
+      }
+    },
+    "/nft/{key}/send": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "The given ObitDID or USN argument",
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/SendNFTRequest"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Succesfully transfered"
+          },
+          "404": {
+            "description": "The requested resource could not be found.",
+            "schema": {
+              "$ref": "#/definitions/NotFound"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "NFT"
+        ],
+        "operationId": "send",
+        "summary": "Send NFT to another address"
+      }
+    },
+    "/obit/checksum": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/GenerateObitChecksumRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Obit checksum response",
+            "schema": {
+              "$ref": "#/definitions/GenerateObitChecksumResponse"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Utils"
+        ],
+        "description": "Generates Obit checksum and provides a log of generation details",
+        "operationId": "generateChecksum",
+        "summary": "Generates Obit checksum"
+      }
+    },
+    "/obit/did": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/GenerateObitDIDRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Obit DID response",
+            "schema": {
+              "$ref": "#/definitions/GenerateObitDIDResponse"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Utils"
+        ],
+        "description": "Returns the Obit DID for a given device_id, part_number and serial_number input.",
+        "operationId": "generateDID",
+        "summary": "Generate Obit DID"
+      }
+    },
+    "/obits": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "Query argument that used for a fulltext search",
+            "in": "query",
+            "name": "q",
+            "type": "string"
+          },
+          {
+            "default": 0,
+            "description": "Number of records to skip for pagination.",
+            "in": "query",
+            "minimum": 0,
+            "name": "offset",
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of obits with pagination responded by given arguments.",
+            "schema": {
+              "$ref": "#/definitions/Obits"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Obit"
+        ],
+        "description": "Implements a fulltext search for obits by \"searchTerm\".",
+        "operationId": "search",
+        "summary": "Search obits by query"
+      },
+      "post": {
+        "consumes": [
+          "application/json:"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/SaveObitRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Obit"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Obit"
+        ],
+        "description": "Returns Obit with updated checksum if data was changed.",
+        "operationId": "save",
+        "summary": "Save Obit"
+      }
+    },
+    "/obits/batch": {
+      "post": {
+        "consumes": [
+          "application/json:"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "$ref": "#/definitions/BatchSaveObitRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of obits with pagination responded by given arguments.",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/Obit"
+              },
+              "title": "BatchSaveObitResponse",
+              "type": "array"
+            }
+          },
+          "422": {
+            "description": "The submitted entity could not be processed.",
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Obit"
+        ],
+        "description": "Returns Obit with updated checksum if data was changed.",
+        "operationId": "BatchSave",
+        "summary": "Batch Save Obit"
+      }
+    },
+    "/obits/{key}": {
+      "parameters": [
+        {
+          "description": "The given ObitDID or USN argument",
+          "in": "path",
+          "name": "key",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Obit"
+            }
+          },
+          "404": {
+            "description": "The requested resource could not be found.",
+            "schema": {
+              "$ref": "#/definitions/NotFound"
+            }
+          },
+          "500": {
+            "description": "Internal server error.",
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "tags": [
+          "Obit"
+        ],
+        "description": "Get a single Obit by given ObitDID or USN",
+        "operationId": "get",
+        "summary": "Get Obit by DID or USN"
+      }
+    },
+    "/obits/{key}/history": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "The given ObitDID or USN argument",
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collection of historical changes for given obit",
+            "schema": {
+              "$ref": "#/definitions/ObitHistory"
+            }
+          },
+          "404": {
+            "description": "The requested resource could not be found.",
+            "schema": {
+              "$ref": "#/definitions/NotFound"
+            }
+          }
+        },
+        "tags": [
+          "Obit"
+        ],
+        "description": "Shows the history of changes by given Obit with ObitDID or USN",
+        "operationId": "history",
+        "summary": "Get Obit history by DID or USN"
+      }
+    }
+  },
+  "definitions": {
+    "Account": {
+      "description": "OBADA account",
+      "properties": {
+        "address": {
+          "description": "OBADA address",
+          "type": "string"
+        },
+        "balance": {
+          "properties": {
+            "amount": {
+              "type": "string"
+            },
+            "denom": {
+              "description": "Denomination unit",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "name": {
+          "description": "Account address associated name",
+          "example": "My test account",
+          "type": "string"
+        },
+        "nft_count": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "pub_key": {
+          "description": "Public key",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "AccountBalance": {
+      "description": "OBADA Account balance",
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "balance": {
+          "properties": {
+            "amount": {
+              "type": "string"
+            },
+            "denom": {
+              "description": "Denomination unit",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "AccountRequest": {
+      "description": "Set account specific data",
+      "properties": {
+        "account_name": {
+          "description": "Associative account name",
+          "example": "My test account",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Accounts": {
+      "properties": {
+        "hd_accounts": {
+          "items": {
+            "$ref": "#/definitions/Account"
+          },
+          "type": "array"
+        },
+        "imported_accounts": {
+          "items": {
+            "$ref": "#/definitions/Account"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "BatchMintNFTRequest": {
+      "description": "Batch mint NFT payload",
+      "properties": {
+        "nfts": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "BatchSaveObitRequest": {
+      "description": "Request to save a batch of Obits",
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "obits": {
+          "items": {
+            "properties": {
+              "documents": {
+                "items": {
+                  "$ref": "#/definitions/DeviceDocument"
+                },
+                "type": "array"
+              },
+              "manufacturer": {
+                "description": "Waiting more specific details from Rohi",
+                "example": "Sony",
+                "type": "string"
+              },
+              "part_number": {
+                "description": "Manufacturer provided. In cases where no part number is provided for the product, use model, or the most specific ID available from the manufacturer. MWCN2LL/A (an iPhone 11 Pro, Silver, 256GB, model A2160)",
+                "example": "MWCN2LL/A",
+                "type": "string"
+              },
+              "serial_number": {
+                "description": "Serial number hashed with sha256 hash function",
+                "example": "f6fc84c9f21c24907d6bee6eec38cabab5fa9a7be8c4a7827fe9e56f245bd2d5",
+                "type": "string"
+              }
+            },
+            "required": [
+              "manufacturer",
+              "part_number",
+              "serial_number"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "should_mint": {
+          "default": false,
+          "description": "If true then client helper will mint NFTs for each Obit",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "obits"
+      ],
+      "type": "object"
+    },
+    "BatchSendNFTRequest": {
+      "description": "Batch transfer NFT payload",
+      "properties": {
+        "nfts": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "receiver": {
+          "description": "OBADA blockchain receiver address",
+          "type": "string"
+        }
+      },
+      "required": [
+        "receiver"
+      ],
+      "type": "object"
+    },
+    "DeviceDocument": {
+      "description": "Device Document",
+      "properties": {
+        "document_file": {
+          "format": "base64",
+          "type": "string"
+        },
+        "name": {
+          "description": "Associative name of device document",
+          "example": "Link to device wipe report",
+          "type": "string"
+        },
+        "should_encrypt": {
+          "default": false,
+          "description": "If true then client helper will encrypt document with account key",
+          "type": "boolean"
+        },
+        "type": {
+          "description": "Document type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "document_file"
+      ],
+      "type": "object"
+    },
+    "Document": {
+      "description": "Document hashlink",
+      "properties": {
+        "encrypted": {
+          "description": "If true then client helper will encrypt document with account key",
+          "type": "boolean"
+        },
+        "hash": {
+          "description": "Hash of the file",
+          "type": "string"
+        },
+        "name": {
+          "description": "Associative name of file",
+          "example": "Link to device wipe report",
+          "type": "string"
+        },
+        "type": {
+          "description": "Document type",
+          "type": "string"
+        },
+        "uri": {
+          "description": "Link to the document",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ExportAccountRequest": {
+      "description": "OBADA account export payload",
+      "properties": {
+        "address": {
+          "description": "OBADA account",
+          "type": "string"
+        },
+        "passphrase": {
+          "description": "Passphrase to decrypt the account",
+          "type": "string"
+        }
+      },
+      "required": [
+        "private_key"
+      ],
+      "type": "object"
+    },
+    "ExportAccountResponse": {
+      "description": "OBADA account export response",
+      "properties": {
+        "private_key": {
+          "description": "OBADA account",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "GenerateObitChecksumRequest": {
+      "description": "Generate Obit checksum payload",
+      "properties": {
+        "manufacturer": {
+          "description": "Manufacturer (Required)",
+          "example": "Apple",
+          "type": "string"
+        },
+        "metadata_uri": {
+          "description": "Metadata URI",
+          "example": "http://somedomain.com/metadata",
+          "type": "string"
+        },
+        "metadata_uri_hash": {
+          "description": "Metadata URI Hash",
+          "example": "eac615cf446cad706b2364f974cbd3ec90620c52575aa1902418572f5a8d1fb5",
+          "type": "string"
+        },
+        "part_number": {
+          "description": "Part Number (Required)",
+          "example": "PN123456789",
+          "type": "string"
+        },
+        "serial_number": {
+          "description": "Serial Number (Required)",
+          "example": "SN123456789",
+          "type": "string"
+        },
+        "trust_anchor_token": {
+          "description": "Trust Token",
+          "example": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2NDc5NDEzNzksImlzcyI6ImFzY2lkaSIsInN1YiI6ImNkZDU1ZDIyLTI3NzAtNDk4Ny05YTI3LTNlNDg1ZDIzMjg1NCIsInZlcmlmeVVybCI6Imh0dHBzOi8vd3d3LmFzY2RpLmNvbS9hcGkvdjEvdmVyaWZ5In0.yEHMUUuJKFZYe04afAsPWEoX35ATb6JQj9aspY_yiY2W3HZKoKHq6rcUV02OL3hptZmByeC02yL-mkczbLLlCQ",
+          "type": "string"
+        }
+      },
+      "required": [
+        "serial_number",
+        "manufacturer",
+        "part_number"
+      ],
+      "type": "object"
+    },
+    "GenerateObitChecksumResponse": {
+      "description": "Obit checksum with logged data",
+      "properties": {
+        "checksum": {
+          "description": "Obit checksum",
+          "example": "",
+          "type": "string"
+        },
+        "compute_log": {
+          "description": "Log that contain captures from SDK",
+          "example": "",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "GenerateObitDIDRequest": {
+      "description": "Generate Obit DID payload",
+      "properties": {
+        "manufacturer": {
+          "description": "Manufacturer (Required)",
+          "example": "Apple",
+          "type": "string"
+        },
+        "part_number": {
+          "description": "Part Number (Required)",
+          "example": "PN123456789",
+          "type": "string"
+        },
+        "serial_number": {
+          "description": "Serial Number (Required)",
+          "example": "SN123456789",
+          "type": "string"
+        }
+      },
+      "required": [
+        "serial_number",
+        "manufacturer",
+        "part_number"
+      ],
+      "type": "object"
+    },
+    "GenerateObitDIDResponse": {
+      "description": "Returns steps that used for DID generation",
+      "properties": {
+        "did": {
+          "description": "DID",
+          "example": "",
+          "type": "string"
+        },
+        "serial_number_hash": {
+          "description": "Serial Number Hash is sha256 of the Serial Number input",
+          "example": "",
+          "type": "string"
+        },
+        "usn": {
+          "description": "Universal Serial Number",
+          "example": "",
+          "type": "string"
+        },
+        "usn_base58": {
+          "description": "Base58",
+          "example": "",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ImportAccountRequest": {
+      "description": "OBADA account import payload",
+      "properties": {
+        "account_name": {
+          "description": "Associative account name",
+          "example": "My test account",
+          "type": "string"
+        },
+        "private_key": {
+          "description": "OBADA account",
+          "type": "string"
+        }
+      },
+      "required": [
+        "private_key"
+      ],
+      "type": "object"
+    },
+    "InternalServerError": {
+      "description": "A typical 500 error.",
+      "properties": {
+        "error": {
+          "default": "Internal Server Error",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "MnemonicRequest": {
+      "$ref": "#/definitions/NewMnemonic"
+    },
+    "NFT": {
+      "description": "OBADA NFT",
+      "properties": {
+        "classId": {
+          "type": "string"
+        },
+        "data": {
+          "properties": {
+            "usn": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "id": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        },
+        "uriHash": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "NewMnemonic": {
+      "description": "Mnemonic for seeding the wallet response",
+      "properties": {
+        "force": {
+          "default": false,
+          "description": "Flag that specify if exisiting wallet should be replaced, if false is send then error will be send back",
+          "type": "boolean"
+        },
+        "mnemonic": {
+          "description": "Mnemonic for seeding",
+          "example": "fantasy route flavor zoo laptop rent knife stick fancy flame black fan oval stairs express identify crane truly anxiety wave notable gather toe tag",
+          "type": "string"
+        }
+      },
+      "required": [
+        "mnemonic"
+      ],
+      "type": "object"
+    },
+    "NotAuthorized": {
+      "description": "A typical 401 error.",
+      "properties": {
+        "error": {
+          "default": "Not authorized",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "NotFound": {
+      "description": "A typical 404 error.",
+      "properties": {
+        "error": {
+          "default": "Not found",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Obit": {
+      "description": "OBADA record.",
+      "properties": {
+        "checksum": {
+          "description": "Hash calculated by SHA256 (previous Obit checksum + Obit data).\n",
+          "type": "string"
+        },
+        "did": {
+          "description": "OBADA decentralized identifier",
+          "example": "did:obada:fe096095-e0f0-4918-9607-6567bd5756b5",
+          "type": "string"
+        },
+        "documents": {
+          "description": "Documents that are attached to Obit",
+          "items": {
+            "$ref": "#/definitions/Document"
+          },
+          "type": "array"
+        },
+        "manufacturer": {
+          "description": "Waiting more specific details from Rohi",
+          "example": "Sony",
+          "type": "string"
+        },
+        "owner": {
+          "description": "Owner is the person/entity that owns the obit and the physical asset it represents. Format is a DID like did:obada:owner:1234. However in the current version only test numbers will be used.",
+          "example": "did:obada:owner:123456",
+          "type": "string"
+        },
+        "part_number": {
+          "description": "Manufacturer provided. In cases where no part number is provided for the product, use model, or the most specific ID available from the manufacturer. MWCN2LL/A (an iPhone 11 Pro, Silver, 256GB, model A2160)",
+          "example": "MWCN2LL/A",
+          "type": "string"
+        },
+        "serial_number": {
+          "description": "Serial number hashed with sha256 hash function",
+          "example": "f6fc84c9f21c24907d6bee6eec38cabab5fa9a7be8c4a7827fe9e56f245bd2d5",
+          "type": "string"
+        },
+        "trust_anchor_token": {
+          "description": "JWT token from the trust anchor",
+          "type": "string"
+        },
+        "usn": {
+          "description": "Test An 8-12 character “URL Shortened” obit. Create the USN by Base(58) encoding the OBIT ID. Take the first 8 characters. Check for duplicates. With 16 million OBITs there is a 40% chance of collision. If so, add 4 characters. Repeat as necessary until a unique USN is generated.\n",
+          "example": "2zEz-xLJR",
+          "type": "string"
+        }
+      },
+      "required": [
+        "manufacturer",
+        "part_number",
+        "serial_number"
+      ],
+      "type": "object"
+    },
+    "ObitHistory": {
+      "additionalProperties": {
+        "properties": {
+          "root_hash": {
+            "type": "string"
+          },
+          "version_hash": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "description": "Represent Obit metadata history",
+      "type": "object"
+    },
+    "Obits": {
+      "description": "Obits search response",
+      "properties": {
+        "data": {
+          "items": {
+            "$ref": "#/definitions/Obit"
+          },
+          "type": "array"
+        },
+        "meta": {
+          "properties": {
+            "current_page": {
+              "type": "integer"
+            },
+            "last_page": {
+              "type": "integer"
+            },
+            "per_page": {
+              "type": "integer"
+            },
+            "total": {
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "Profile": {
+      "description": "ClientHelper user profile",
+      "properties": {
+        "email": {
+          "description": "Profile owner email, will be used for verification purpose",
+          "example": "john.doe@obada.io",
+          "type": "string"
+        },
+        "id": {
+          "description": "Profile owner id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "email"
+      ],
+      "type": "object"
+    },
+    "RegisterRequest": {
+      "description": "Register profile payload",
+      "properties": {
+        "email": {
+          "description": "Profile owner email, will be used for verification purpose",
+          "example": "john.doe@obada.io",
+          "type": "string"
+        }
+      },
+      "required": [
+        "email"
+      ],
+      "type": "object"
+    },
+    "SaveObitRequest": {
+      "description": "Request to save Obit",
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "documents": {
+          "items": {
+            "$ref": "#/definitions/DeviceDocument"
+          },
+          "type": "array"
+        },
+        "manufacturer": {
+          "description": "Waiting more specific details from Rohi",
+          "example": "Sony",
+          "type": "string"
+        },
+        "part_number": {
+          "description": "Manufacturer provided. In cases where no part number is provided for the product, use model, or the most specific ID available from the manufacturer. MWCN2LL/A (an iPhone 11 Pro, Silver, 256GB, model A2160)",
+          "example": "MWCN2LL/A",
+          "type": "string"
+        },
+        "serial_number": {
+          "description": "Serial number hashed with sha256 hash function",
+          "example": "f6fc84c9f21c24907d6bee6eec38cabab5fa9a7be8c4a7827fe9e56f245bd2d5",
+          "type": "string"
+        }
+      },
+      "required": [
+        "manufacturer",
+        "part_number",
+        "serial_number"
+      ],
+      "type": "object"
+    },
+    "SendCoinsRequest": {
+      "description": "Sending tokens payload",
+      "properties": {
+        "amount": {
+          "type": "string"
+        },
+        "denom": {
+          "type": "string"
+        },
+        "recipient_address": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "recipient_address",
+        "amount",
+        "denom"
+      ],
+      "type": "object"
+    },
+    "SendNFTRequest": {
+      "description": "Transfer NFT payload",
+      "properties": {
+        "receiver": {
+          "description": "OBADA blockchain receiver address",
+          "type": "string"
+        }
+      },
+      "required": [
+        "receiver"
+      ],
+      "type": "object"
+    },
+    "UnprocessableEntity": {
+      "description": "A typical 422 error.",
+      "properties": {
+        "error": {
+          "default": "data validation error",
+          "type": "string"
+        },
+        "fields": {
+          "items": {
+            "properties": {
+              "error": {
+                "default": "serial_number is required field",
+                "type": "string"
+              },
+              "field": {
+                "default": "serial_number",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "WalletExistsError": {
+      "description": "Returns when trying to create or import HD wallet into setteld user profile.",
+      "properties": {
+        "error": {
+          "default": "profile wallet already exist",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "securityDefinitions": {
+    "bearerAuth": {
+      "in": "header",
+      "name": "Authorization",
+      "type": "apiKey"
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Accounts"
+    },
+    {
+      "name": "NFT"
+    },
+    {
+      "name": "Keys"
+    },
+    {
+      "name": "Obit"
+    },
+    {
+      "name": "Utils"
+    }
+  ],
+  "x-components": {
+    "responses": {
+      "Account": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/Account"
+            }
+          }
+        },
+        "description": "Returns OBADA account"
+      },
+      "AccountBalance": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/AccountBalance"
+            }
+          }
+        },
+        "description": "Account balance response"
+      },
+      "AccountsResponse": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/Accounts"
+            }
+          }
+        },
+        "description": "Returns all OBADA accounts associated with client-helper profile"
+      },
+      "ExportAccountResponse": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/ExportAccountResponse"
+            }
+          }
+        },
+        "description": "Single OBADA account (private key) encrypted with password"
+      },
+      "GenerateObitChecksumResponse": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/GenerateObitChecksumResponse"
+            }
+          }
+        },
+        "description": "Obit checksum response"
+      },
+      "GenerateObitDIDResponse": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/GenerateObitDIDResponse"
+            }
+          }
+        },
+        "description": "Obit DID response"
+      },
+      "InternalServerError": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/InternalServerError"
+            }
+          }
+        },
+        "description": "Internal server error."
+      },
+      "NewMnemonic": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/NewMnemonic"
+            }
+          }
+        },
+        "description": "New mnemonic phrase for wallet seeding"
+      },
+      "NewProfileResponse": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/Profile"
+            }
+          }
+        },
+        "description": "Created profile response"
+      },
+      "NotAuthorized": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/NotAuthorized"
+            }
+          }
+        },
+        "description": "The request is not authorized."
+      },
+      "NotFound": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/NotFound"
+            }
+          }
+        },
+        "description": "The requested resource could not be found."
+      },
+      "Obit": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/Obit"
+            }
+          }
+        },
+        "description": ""
+      },
+      "ObitHistoryResponse": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/ObitHistory"
+            }
+          }
+        },
+        "description": "Collection of historical changes for given obit"
+      },
+      "UnprocessableEntity": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/UnprocessableEntity"
+            }
+          }
+        },
+        "description": "The submitted entity could not be processed."
+      },
+      "WalletExistsError": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/definitions/WalletExistsError"
+            }
+          }
+        },
+        "description": ""
+      }
+    }
+  }
+}
