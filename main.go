@@ -37,7 +37,6 @@ func main() {
 		os.Exit(1)
 	}
 	defer log.Sync()
-
 	var o opts
 
 	if err := run(log, &o); err != nil {

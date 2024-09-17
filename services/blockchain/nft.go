@@ -70,8 +70,8 @@ func (bs Service) GetNFTByAddress(ctx context.Context, address string) ([]types.
 }
 
 // MintGasEstimate returns gas estimate for minting NFT.
-func (bs Service) MintGasEstimate(ctx context.Context, d services.Device, addreess string) error {
-	msg := bs.buildMintMsg(d, addreess)
+func (bs Service) MintGasEstimate(ctx context.Context, d services.Device, address string) error {
+	msg := bs.buildMintMsg(d, address)
 
 	resp, _, err := bs.nodeClient.CalculateGas(ctx, msg)
 	bs.logger.Info("Gas estimation for minting", resp)
@@ -110,6 +110,21 @@ func (bs Service) buildBatchMintMsg(devices []services.Device, address string) *
 	return &types.MsgBatchMintNFT{
 		Creator: address,
 		Nft:     nfts,
+	}
+}
+
+func (bs Service) buildBatchTransferMsg(devices []services.Device, sender, receiver string) *types.MsgBatchTransferNFT {
+
+	nfts := make([]string, 0, len(devices))
+
+	for _, d := range devices {
+		nfts = append(nfts, d.DID)
+	}
+
+	return &types.MsgBatchTransferNFT{
+		Sender:   sender,
+		Receiver: receiver,
+		Ids:      nfts,
 	}
 }
 
@@ -262,6 +277,48 @@ func (bs Service) TransferNFT(ctx context.Context, did, receiverAddr string, pri
 	}
 
 	bs.logger.Info("NFT transfer request was sent", msg, resp)
+
+	return nil
+}
+
+// BatchTransfer transfers collection of NFTs in single batch from one account to another.
+func (bs Service) BatchTransfer(
+	ctx context.Context,
+	receiver string,
+	ds []services.Device,
+	privKey cryptotypes.PrivKey,
+) error {
+	accAddress := sdk.AccAddress(privKey.PubKey().Address().Bytes()).String()
+
+	ok, err := bs.nodeClient.HasAccount(ctx, accAddress)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return ErrInsufficientFunds
+	}
+
+	msg := bs.buildBatchTransferMsg(ds, accAddress, receiver)
+
+	multiplier := len(msg.Ids)
+
+	txConf := obadanode.TxCustomConfig{
+		Msg:       msg,
+		GasLimit:  uint64(MinGasLimit * multiplier),
+		FeeAmount: sdkmath.NewInt(MinGasLimit * int64(multiplier)),
+		Priv:      privKey,
+	}
+
+	resp, err := bs.nodeClient.SendTx(ctx, txConf)
+	if err != nil {
+		if errors.Is(err, obadanode.ErrInsufficientFunds) {
+			return ErrInsufficientFunds
+		}
+
+		return err
+	}
+	bs.logger.Info("batch of NFTs was transfered", resp)
 
 	return nil
 }

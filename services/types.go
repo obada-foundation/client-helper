@@ -102,6 +102,12 @@ type SendNFT struct {
 	ReceiverArr string `json:"receiver"`
 }
 
+// NFTBachTranfer request data for sending batch of NFT
+type NFTBachTranfer struct {
+	Receiver string   `json:"receiver"`
+	Nfts     []string `json:"nfts"`
+}
+
 // MintBatchNFT request data for minting batch NFTs
 type MintBatchNFT struct {
 	Nfts []string `json:"nfts"`

@@ -88,4 +88,5 @@ func Routes(app *web.App, cfg Config) {
 	app.Handle(http.MethodPost, version, "/nft/batch-mint", nftGrp.BatchMint, authenticate)
 	app.Handle(http.MethodPost, version, "/nft/:key/metadata", nftGrp.UpdateMetadata, authenticate)
 	app.Handle(http.MethodPost, version, "/nft/:key/send", nftGrp.Transfer, authenticate)
+	app.Handle(http.MethodPost, version, "/nft/:key/batch-send", nftGrp.BatchTransfer, authenticate)
 }

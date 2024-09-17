@@ -117,6 +117,31 @@ func (h Handlers) UpdateMetadata(ctx context.Context, w http.ResponseWriter, r *
 	return web.RespondWithNoContent(ctx, w, http.StatusOK)
 }
 
+// BatchTransfer transfers a collection of NFTs from single account to another
+func (h Handlers) BatchTransfer(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	var req services.NFTBachTranfer
+
+	if err := web.Decode(r, &req); err != nil {
+		return fmt.Errorf("unable to decode request data: %w", err)
+	}
+
+	devices, err := h.DeviceSvc.GetByDIDs(ctx, req.Nfts)
+	if err != nil {
+		return err
+	}
+
+	privKey, err := h.AccountSvc.GetAccountPrivateKey(ctx, devices[0].Address)
+	if err != nil {
+		return err
+	}
+
+	if err := h.BlockchainSvc.BatchTransfer(ctx, req.Receiver, devices, privKey); err != nil {
+		return err
+	}
+
+	return web.RespondWithNoContent(ctx, w, http.StatusCreated)
+}
+
 // Transfer transfers NFT
 func (h Handlers) Transfer(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var req services.SendNFT
