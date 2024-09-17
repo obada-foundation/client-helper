@@ -324,8 +324,10 @@ func (s *ServerCommand) makeWsClient(ctx context.Context, cfg wsClientConfig) (*
 								break
 							}
 
+							s.Logger.Infof("%+v", val);
+
 							switch val[0] {
-							case "mint_nft":
+							case "/obadafoundation.obit.v1.MsgMintNFT":
 								for _, msg := range tx.GetMsgs() {
 									msg, ok := msg.(*obadatypes.MsgMintNFT)
 									if ok {
@@ -338,7 +340,7 @@ func (s *ServerCommand) makeWsClient(ctx context.Context, cfg wsClientConfig) (*
 									}
 								}
 								s.Logger.Infow("obit was minted", "data", result.Data)
-							case "update_uri_hash":
+							case "/obadafoundation.obit.v1.MsgUpdateUriHash":
 								for _, msg := range tx.GetMsgs() {
 									msg, ok := msg.(*obadatypes.MsgUpdateUriHash)
 									if ok {
@@ -367,10 +369,11 @@ func (s *ServerCommand) makeWsClient(ctx context.Context, cfg wsClientConfig) (*
 									}
 								}
 
-							case "transfer_nft":
+							case "/obadafoundation.obit.v1.MsgTransferNFT":
 								for _, msg := range tx.GetMsgs() {
 									msg, ok := msg.(*obadatypes.MsgTransferNFT)
 									if ok {
+										s.Logger.Infow("Transfer executed")
 										// for future refactoring
 										_ = cfg.bus.Emit(ctx, events.NftTransfered, msg.Id)
 
@@ -379,6 +382,8 @@ func (s *ServerCommand) makeWsClient(ctx context.Context, cfg wsClientConfig) (*
 											s.Logger.Errorw("cannot get NFT by DID", "did", msg.Id, "error", err)
 											break
 										}
+
+										s.Logger.Infof("%+v", msg)
 
 										profileID, err := cfg.accountSvc.GetProfileByAddress(msg.Receiver)
 										if err != nil {
